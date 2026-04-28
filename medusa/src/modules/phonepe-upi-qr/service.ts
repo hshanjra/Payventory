@@ -47,13 +47,13 @@ class PhonepeUpiQrProviderService extends AbstractPaymentProvider {
   }
 
   static validateOptions(options: Record<any, any>): void | never {
-    if (!options.base_url) {
+    if (!options.baseUrl) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
         "PhonePe UPI QR: Base URL is required",
       );
     }
-    if (!options.merchant_id) {
+    if (!options.merchantId) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
         "PhonePe UPI QR: Merchant ID is required",
