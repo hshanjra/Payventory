@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * NativeWind v4 dark mode is driven by the `dark:` class variant, toggled
+ * by useColorScheme. CSS custom properties are web-only; on React Native
+ * all theming must use Tailwind utility classes with dark: prefix.
+ *
+ * Semantic token overrides for dark mode are applied below as Tailwind
+ * theme extensions in tailwind.config.js — dark: variants flip the colors.
+ */

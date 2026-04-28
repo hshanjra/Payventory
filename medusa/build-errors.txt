@@ -1,0 +1,423 @@
+﻿
+> medusa@0.0.1 build
+> medusa build
+
+[32minfo[39m:    redisUrl not found. A fake redis instance will be used.
+[32minfo[39m:    Generating types...
+[32minfo[39m:    No link to load from D:\DJF\medusa\node_modules\@medusajs\draft-order\.medusa\server\src\links. skipped.
+[32minfo[39m:    Types generated successfully
+[32minfo[39m:    Starting build...
+[32minfo[39m:    Compiling backend source...
+[32minfo[39m:    Removing existing ".medusa\server" folder
+[32minfo[39m:    Compiling frontend source...
+[32minfo[39m:    Backend build completed successfully (12.39s)
+node.exe : [31mx[39m Build 
+failed in 28.09s
+At C:\Program 
+Files\nodejs\npm.ps1:29 
+char:3
++   & $NODE_EXE $NPM_CLI_JS 
+$args
++   
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo           
+   : NotSpecified: ([31mx  
+  [39m Build failed in 28.   
+ 09s:String) [], RemoteEx    
+ception
+    + FullyQualifiedErrorId  
+   : NativeCommandError
+ 
+[31merror[39m:   Unable to compile frontend source
+[31merror[39m:   [31msrc/admin/routes/stock-transfers/page.tsx (2:9): "ArrowsRightLeft" is not exported by "node_modules/@medusajs/icons/dist/esm/index.js", imported by "src/admin/routes/stock-transfers/page.tsx".[39m
+file: [36mD:/DJF/medusa/src/admin/routes/stock-transfers/page.tsx:2:9[39m
+[33m
+1: import { defineRouteConfig } from "@medusajs/admin-sdk";
+2: import { ArrowsRightLeft } from "@medusajs/icons";
+            ^
+3: import {
+4:   Badge,
+[39m
+[31msrc/admin/routes/stock-t
+ransfers/page.tsx (2:9): 
+"ArrowsRightLeft" is not 
+exported by "node_modules/@me
+dusajs/icons/dist/esm/index.j
+s", imported by "src/admin/ro
+utes/stock-transfers/page.tsx
+".[39m
+file: [36mD:/DJF/medusa/src/
+admin/routes/stock-transfers/
+page.tsx:2:9[39m
+[33m
+1: import { 
+defineRouteConfig } from 
+"@medusajs/admin-sdk";
+2: import { ArrowsRightLeft 
+} from "@medusajs/icons";
+            ^
+3: import {
+4:   Badge,
+[39m
+    at getRollupError (file:/
+//D:/DJF/medusa/node_modules/
+rollup/dist/es/shared/parseAs
+t.js:402:41)
+    at error (file:///D:/DJF/
+medusa/node_modules/rollup/di
+st/es/shared/parseAst.js:398:
+42)
+    at Module.error (file:///
+D:/DJF/medusa/node_modules/ro
+llup/dist/es/shared/node-entr
+y.js:17040:16)
+    at Module.traceVariable (
+file:///D:/DJF/medusa/node_mo
+dules/rollup/dist/es/shared/n
+ode-entry.js:17452:29)
+    at 
+ModuleScope.findVariable (fil
+e:///D:/DJF/medusa/node_modul
+es/rollup/dist/es/shared/node
+-entry.js:15070:39)
+    at ReturnValueScope.findV
+ariable (file:///D:/DJF/medus
+a/node_modules/rollup/dist/es
+/shared/node-entry.js:5673:38
+)
+    at FunctionBodyScope.find
+Variable (file:///D:/DJF/medu
+sa/node_modules/rollup/dist/e
+s/shared/node-entry.js:5673:3
+8)
+    at Identifier.bind (file:
+///D:/DJF/medusa/node_modules
+/rollup/dist/es/shared/node-e
+ntry.js:5447:40)
+    at CallExpression.bind (f
+ile:///D:/DJF/medusa/node_mod
+ules/rollup/dist/es/shared/no
+de-entry.js:2825:28)
+    at CallExpression.bind (f
+ile:///D:/DJF/medusa/node_mod
+ules/rollup/dist/es/shared/no
+de-entry.js:12179:15) {
+  binding: 'ArrowsRightLeft',
+  code: 'MISSING_EXPORT',
+  exporter: 'D:/DJF/medusa/no
+de_modules/@medusajs/icons/di
+st/esm/index.js',
+  id: 'D:/DJF/medusa/src/admi
+n/routes/stock-transfers/page
+.tsx',
+  url: 'https://rollupjs.org/
+troubleshooting/#error-name-i
+s-not-exported-by-module',
+  pos: 124,
+  loc: {
+    column: 9,
+    file: 'D:/DJF/medusa/src/
+admin/routes/stock-transfers/
+page.tsx',
+    line: 2
+  },
+  frame: '1: import { 
+defineRouteConfig } from 
+"@medusajs/admin-sdk";\r\n' +
+    '2: import { 
+ArrowsRightLeft } from 
+"@medusajs/icons";\r\n' +
+    '            ^\n' +
+    '3: import {\r\n' +
+    '4:   Badge,\r',
+  watchFiles: [
+    'D:/DJF/medusa/.medusa/cl
+ient/index.html',
+    'D:/DJF/medusa/.medusa/cl
+ient/entry.jsx',
+    'D:/DJF/medusa/node_modul
+es/react/jsx-dev-runtime.js',
+    'D:/DJF/medusa/node_modul
+es/react-dom/client.js',
+    'D:/DJF/medusa/.medusa/cl
+ient/index.css',
+    'D:/DJF/medusa/node_modul
+es/react/index.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/a
+pp.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/draft-order/.med
+usa/server/src/admin/index.mj
+s',
+    'D:/DJF/medusa/node_modul
+es/react/cjs/react-jsx-dev-ru
+ntime.development.js',
+    'D:/DJF/medusa/node_modul
+es/react/cjs/react.developmen
+t.js',
+    'D:/DJF/medusa/node_modul
+es/react-dom/index.js',
+    'D:/DJF/medusa/node_modul
+es/react/jsx-runtime.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-ONB3JEHR.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-4GQOUCX6.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-D3YQN7HV.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-PMA2D6IL.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-G4BWCU5P.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-RYJ2UVJE.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-DG7J63J2.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-MNXC6Q4F.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-LPEUYMRK.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-OZPB6JBL.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-OC7BQLYI.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-C5P5PL3E.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-I4OBEAOJ.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-S4DMV3ZT.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-ZCARHA6C.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-YCDDT44O.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-OBQI23QM.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-FAB3VINY.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-KI7TOXBR.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-HI6URQ7H.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-4GQYRG3L.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-535OVBXR.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-6CLQKVAU.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-QBIQEVTU.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-C32SLRTC.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-LGNTHZ5Y.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-WAXMT4IY.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-2SSUH2HJ.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-5BQQRHQS.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-5AFMB7XQ.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-6F74MBBU.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-A63RZVX6.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-DYDGGABK.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-FWRPGWPC.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-73OGFYCU.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-HBXV7ENS.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-6X2UTJF3.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-R3FD2XEU.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-RNV5E7NV.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-3BF5SC66.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-SQDIZZDW.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-VCSSQVPD.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-7AXHHXCX.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-FXYH54JP.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-774WSTCC.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-QZ7TP4HQ.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-HP2JH45P.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-NFEK63OE.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-3TPUO6MD.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-CDORR33H.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/dashboard/dist/c
+hunk-CN7JXSGW.mjs',
+    'package.json',
+    'D:/DJF/medusa/node_modul
+es/react-dom/cjs/react-dom.de
+velopment.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/js-sdk/dist/esm/
+index.js',
+    'D:/DJF/medusa/node_modul
+es/react/cjs/react-jsx-runtim
+e.development.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/ui/dist/esm/inde
+x.js',
+    'D:/DJF/medusa/node_modul
+es/motion/dist/es/motion/lib/
+react.mjs',
+    'D:/DJF/medusa/node_modul
+es/react-i18next/dist/es/inde
+x.js',
+    'D:/DJF/medusa/node_modul
+es/radix-ui/dist/index.mjs',
+    'D:/DJF/medusa/node_modul
+es/react-router-dom/dist/inde
+x.js',
+    'D:/DJF/medusa/node_modul
+es/react-hook-form/dist/index
+.esm.mjs',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/icons/dist/esm/i
+ndex.js',
+    'D:/DJF/medusa/node_modul
+es/@ariakit/react/esm/index.j
+s',
+    'D:/DJF/medusa/node_modul
+es/@tanstack/react-query/buil
+d/modern/index.js',
+    'D:/DJF/medusa/node_modul
+es/lodash.debounce/index.js',
+    'D:/DJF/medusa/node_modul
+es/lodash.isequal/index.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/admin-sdk/dist/i
+ndex.mjs',
+    'D:/DJF/medusa/node_modul
+es/@hookform/resolvers/zod/di
+st/zod.mjs',
+    'D:/DJF/medusa/node_modul
+es/date-fns/locale.mjs',
+    'D:/DJF/medusa/node_modul
+es/@uiw/react-json-view/esm/i
+ndex.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/admin-shared/dis
+t/index.mjs',
+    'D:/DJF/medusa/src/admin/
+i18n/index.ts',
+    'D:/DJF/medusa/node_modul
+es/date-fns/index.mjs',
+    'D:/DJF/medusa/node_modul
+es/match-sorter/dist/match-so
+rter.esm.js',
+    'D:/DJF/medusa/node_modul
+es/i18next-browser-languagede
+tector/dist/esm/i18nextBrowse
+rLanguageDetector.js',
+    'D:/DJF/medusa/node_modul
+es/i18next/dist/esm/i18next.j
+s',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/js-sdk/dist/esm/
+client.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/js-sdk/dist/esm/
+auth/index.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/js-sdk/dist/esm/
+admin/index.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/js-sdk/dist/esm/
+store/index.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/ui/dist/esm/comp
+onents/alert/index.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/ui/dist/esm/comp
+onents/avatar/index.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/ui/dist/esm/comp
+onents/badge/index.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/ui/dist/esm/comp
+onents/button/index.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/ui/dist/esm/comp
+onents/calendar/index.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/ui/dist/esm/comp
+onents/code/index.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/ui/dist/esm/comp
+onents/code-block/index.js',
+    'D:/DJF/medusa/node_modul
+es/@medusajs/ui/dist/esm/comp
+onents/checkbox/index.js',
+    ... 3867 more items
+  ],
+  [Symbol(augmented)]: true
+}
