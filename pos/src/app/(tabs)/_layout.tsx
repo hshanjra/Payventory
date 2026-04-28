@@ -2,7 +2,7 @@ import { Tabs, useRouter } from 'expo-router';
 import { Platform, Text, View, Animated, Pressable, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
-import { TabScrollProvider, useTabScroll } from '@/contexts/TabScrollContext';
+import { TabScrollProvider, useTabScroll } from '@/contexts/tab-scroll-context';
 import { useTheme } from '@/theme/useTheme';
 
 function FloatingCart() {

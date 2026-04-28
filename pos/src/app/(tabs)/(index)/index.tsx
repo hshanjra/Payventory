@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Text, View, Animated, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
-import { useScrollHandler } from '@/contexts/TabScrollContext';
+import { useScrollHandler } from '@/contexts/tab-scroll-context';
 import { useTheme } from '@/theme/useTheme';
 
 import { Header } from '@/components/home/Header';
@@ -15,6 +15,8 @@ const STORES = [
   { id: '2', name: 'Uptown Branch', address: '456 Broadway, New York' },
   { id: '3', name: 'Brooklyn Store', address: '789 Bedford Ave, Brooklyn' },
 ];
+
+let hasShownStoreSelector = false;
 
 export default function IndexScreen() {
   const router = useRouter();
@@ -51,6 +53,11 @@ export default function IndexScreen() {
         }
       } catch {
         /* ignore */
+      } finally {
+        if (!hasShownStoreSelector) {
+          setStoreDrawerVisible(true);
+          hasShownStoreSelector = true;
+        }
       }
     })();
   }, []);
