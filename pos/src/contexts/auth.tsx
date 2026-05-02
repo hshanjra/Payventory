@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 import Medusa from '@medusajs/js-sdk';
 import * as SecureStore from 'expo-secure-store';
+import { clearPosDefaultsFromStore } from '@/lib/pos-defaults-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
 
 export type AuthStateType =
@@ -127,6 +128,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await SecureStore.deleteItemAsync('apiKey');
     await SecureStore.deleteItemAsync('appPin');
     await SecureStore.deleteItemAsync('appLockMethod');
+    await clearPosDefaultsFromStore();
     setState({ status: 'unauthenticated' });
   }, [state.status]);
 
@@ -319,7 +321,7 @@ export const useAuthenticated = () => {
   return state;
 };
 
-export const useMedusaSdk = () => {
+export const useMedusaSdk = (): Medusa => {
   const { state } = useAuthCtx();
 
   if (state.status !== 'authenticated') {

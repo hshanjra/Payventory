@@ -16,16 +16,36 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/useTheme';
 import { useAuthCtx } from '@/contexts/auth';
 import { Alert, ActivityIndicator } from 'react-native';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const OTP_LENGTH = 6;
+const loginOtpSchema = z.object({
+  otp: z.string().regex(/^\d+$/, 'OTP must contain only digits').length(OTP_LENGTH, 'Enter the 6-digit OTP'),
+});
+type LoginOtpFormValues = z.infer<typeof loginOtpSchema>;
 
 export default function LoginOtpScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
 
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const otpRefs = useRef<(TextInput | null)[]>([]);
   const [loading, setLoading] = useState(false);
   const { validateOtp } = useAuthCtx();
+  const {
+    setValue,
+    watch,
+    trigger,
+    formState: { errors },
+  } = useForm<LoginOtpFormValues>({
+    resolver: zodResolver(loginOtpSchema),
+    defaultValues: { otp: '' },
+    mode: 'onSubmit',
+  });
+  const otpValue = watch('otp');
+  const otpDigits = Array.from({ length: OTP_LENGTH }).map((_, idx) => otpValue[idx] ?? '');
 
   // Card entrance animation
   const cardAnim = useRef(new Animated.Value(0)).current;
@@ -34,14 +54,16 @@ export default function LoginOtpScreen() {
   }, []);
 
   const handleOtpChange = (val: string, idx: number) => {
-    const next = [...otp];
-    next[idx] = val.replace(/[^0-9]/g, '').slice(-1);
-    setOtp(next);
-    if (val && idx < 5) otpRefs.current[idx + 1]?.focus();
+    const digit = val.replace(/[^0-9]/g, '').slice(-1);
+    const next = otpValue.padEnd(OTP_LENGTH, ' ').split('');
+    next[idx] = digit || ' ';
+    const merged = next.join('').replace(/\s/g, '').slice(0, OTP_LENGTH);
+    setValue('otp', merged, { shouldValidate: false });
+    if (digit && idx < OTP_LENGTH - 1) otpRefs.current[idx + 1]?.focus();
   };
   
   const handleOtpKeyPress = (e: any, idx: number) => {
-    if (e.nativeEvent.key === 'Backspace' && !otp[idx] && idx > 0) {
+    if (e.nativeEvent.key === 'Backspace' && !otpDigits[idx] && idx > 0) {
       otpRefs.current[idx - 1]?.focus();
     }
   };
@@ -113,7 +135,7 @@ export default function LoginOtpScreen() {
               Enter your code below
             </Text>
             <View className="flex-row gap-2.5 justify-center">
-              {otp.map((digit, i) => (
+              {otpDigits.map((digit, i) => (
                 <TextInput
                   key={i}
                   ref={(r) => { otpRefs.current[i] = r; }}
@@ -138,6 +160,11 @@ export default function LoginOtpScreen() {
                 Resend code
               </Text>
             </Pressable>
+            {!!errors.otp?.message && (
+              <Text className="text-center text-[13px] font-medium" style={{ color: colors.error }}>
+                {errors.otp.message}
+              </Text>
+            )}
             
             {/* Sign in button */}
             <Pressable
@@ -145,11 +172,11 @@ export default function LoginOtpScreen() {
               style={({ pressed }) => (pressed || loading) ? { opacity: 0.88, transform: [{ scale: 0.975 }] } : {}}
               disabled={loading}
               onPress={async () => {
-                const otpString = otp.join('');
-                if (otpString.length < 6) return;
+                const isValid = await trigger('otp');
+                if (!isValid) return;
                 setLoading(true);
                 try {
-                  await validateOtp(email, otpString);
+                  await validateOtp(email, otpValue);
                 } catch (err: any) {
                   Alert.alert('Validation Failed', err?.message || 'Check your code and try again.');
                 } finally {

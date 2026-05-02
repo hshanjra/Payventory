@@ -14,13 +14,31 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/useTheme';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const loginSchema = z.object({
+  email: z.string().trim().email('Please enter a valid email address'),
+});
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
 
-  const [email, setEmail] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
+  const {
+    setValue,
+    watch,
+    formState: { errors },
+    trigger,
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '' },
+    mode: 'onSubmit',
+  });
+  const email = watch('email');
 
   // Card entrance animation
   const cardAnim = useRef(new Animated.Value(0)).current;
@@ -116,13 +134,21 @@ export default function LoginScreen() {
               placeholder="you@company.com"
               placeholderTextColor={colors.fgMuted}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(value) => setValue('email', value, { shouldValidate: false })}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
               onFocus={() => setEmailFocused(true)}
-              onBlur={() => setEmailFocused(false)}
+              onBlur={async () => {
+                setEmailFocused(false);
+                await trigger('email');
+              }}
             />
+            {!!errors.email?.message && (
+              <Text className="text-[13px] font-medium" style={{ color: colors.error }}>
+                {errors.email.message}
+              </Text>
+            )}
           </View>
 
           {/* ── Login method buttons ── */}
@@ -140,9 +166,11 @@ export default function LoginScreen() {
                 backgroundColor: pressed ? colors.primary + '1a' : colors.muted,
                 borderColor: colors.border,
               })}
-              onPress={() =>
-                router.push(`/(auth)/login-password?email=${encodeURIComponent(email)}`)
-              }>
+              onPress={async () => {
+                const isValid = await trigger('email');
+                if (!isValid) return;
+                router.push(`/(auth)/login-password?email=${encodeURIComponent(email.trim())}`);
+              }}>
               <View className="flex-row items-center gap-3.5">
                 <View
                   className="h-11 w-11 items-center justify-center rounded-[14px]"
@@ -168,7 +196,11 @@ export default function LoginScreen() {
                 backgroundColor: pressed ? colors.primary + '1a' : colors.muted,
                 borderColor: colors.border,
               })}
-              onPress={() => router.push(`/(auth)/login-otp?email=${encodeURIComponent(email)}`)}>
+              onPress={async () => {
+                const isValid = await trigger('email');
+                if (!isValid) return;
+                router.push(`/(auth)/login-otp?email=${encodeURIComponent(email.trim())}`);
+              }}>
               <View className="flex-row items-center gap-3.5">
                 <View
                   className="h-11 w-11 items-center justify-center rounded-[14px]"

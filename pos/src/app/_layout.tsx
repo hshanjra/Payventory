@@ -1,5 +1,4 @@
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { QueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -10,14 +9,13 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { View } from 'react-native';
 import { useTheme, light, dark } from '@/theme/useTheme';
 import { AuthProvider, useAuthCtx } from '@/contexts/auth';
+import { SettingsProvider, usePosSettings } from '@/contexts/settings';
 import { useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 
 import '../../global.css';
 
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { gcTime: 1000 * 60 * 60 * 24 } },
-});
+import { queryClient } from '@/lib/query-client';
 const asyncStoragePersister = createAsyncStoragePersister({ storage: AsyncStorage });
 
 const FinanceLightTheme = {
@@ -43,11 +41,14 @@ const FinanceDarkTheme = {
 function App() {
   const { colors } = useTheme();
   const { state } = useAuthCtx();
+  const { isReady: settingsReady, isComplete: hasPosDefaults } = usePosSettings();
   const segments = useSegments();
   const router = useRouter();
+  const authState = state.status === 'authenticated' ? state : null;
 
   useEffect(() => {
     if (state.status === 'loading') return;
+    if (state.status === 'authenticated' && !settingsReady) return;
 
     const inAuthGroup = segments[0] === '(auth)';
 
@@ -56,24 +57,41 @@ function App() {
         router.replace('/(auth)/onboarding');
       }
     } else if (state.status === 'authenticated') {
-      if (!state.hasAppLockSetup) {
-        if (segments[1] !== 'app-lock-setup') {
+      const currentLeaf = segments[segments.length - 1];
+      if (!authState?.hasAppLockSetup) {
+        if (currentLeaf !== 'app-lock-setup') {
           router.replace('/(auth)/app-lock-setup');
         }
-      } else if (state.isAppLocked) {
-        if (segments[1] !== 'app-lock') {
+      } else if (authState.isAppLocked) {
+        if (currentLeaf !== 'app-lock') {
           router.replace('/(auth)/app-lock');
         }
+      } else if (!hasPosDefaults) {
+        if (currentLeaf !== 'pos-setup') {
+          router.replace('/(auth)/pos-setup');
+        }
       } else if (inAuthGroup) {
-        // If logged in and unlocked, don't stay in auth group unless it's onboarding (though usually we'd go to tabs)
         router.replace('/(tabs)');
       }
     }
-  }, [state.status, state.hasAppLockSetup, state.isAppLocked, segments]);
+  }, [
+    state.status,
+    authState?.hasAppLockSetup,
+    authState?.isAppLocked,
+    hasPosDefaults,
+    settingsReady,
+    segments,
+  ]);
 
-  if (state.status === 'loading') {
+  if (state.status === 'loading' || (state.status === 'authenticated' && !settingsReady)) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.canvas, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.canvas,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
         {/* You could add a logo or spinner here */}
       </View>
     );
@@ -85,7 +103,7 @@ function App() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
           <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="cart" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="draft-order" options={{ presentation: 'modal' }} />
           <Stack.Screen name="search" options={{ animation: 'fade' }} />
           <Stack.Screen name="scan" options={{ presentation: 'modal' }} />
           <Stack.Screen name="+not-found" />
@@ -106,7 +124,9 @@ export default function RootLayout() {
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
               <AuthProvider>
-                <App />
+                <SettingsProvider>
+                  <App />
+                </SettingsProvider>
               </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>

@@ -4,12 +4,22 @@ import { Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useTheme } from '@/theme/useTheme';
 import { cn } from '@/lib/utils';
 import { useAuthCtx } from '@/contexts/auth';
 import * as SecureStore from 'expo-secure-store';
 
 const PIN_LENGTH = 4;
+const pinFormSchema = z.object({
+  pin: z
+    .string()
+    .regex(/^\d+$/, 'PIN must contain only digits')
+    .length(PIN_LENGTH, `PIN must be ${PIN_LENGTH} digits`),
+});
+type PinFormValues = z.infer<typeof pinFormSchema>;
 const NUMPAD_ROWS = [
   ['1', '2', '3'],
   ['4', '5', '6'],
@@ -22,16 +32,26 @@ export default function AppLockScreen() {
   const { colors, isDark } = useTheme();
   const { unlockApp, logout } = useAuthCtx();
 
-  const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [method, setMethod] = useState<string | null>(null);
+  const [methodResolved, setMethodResolved] = useState(false);
+  const { setValue, getValues, reset } = useForm<PinFormValues>({
+    resolver: zodResolver(pinFormSchema),
+    defaultValues: { pin: '' },
+  });
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const checkMethod = async () => {
       const storedMethod = await SecureStore.getItemAsync('appLockMethod');
-      setMethod(storedMethod);
+      if (storedMethod === 'biometric' || storedMethod === 'pin') {
+        setMethod(storedMethod);
+      } else {
+        // Fallback to PIN when lock method is missing or invalid.
+        setMethod('pin');
+      }
+      setMethodResolved(true);
       if (storedMethod === 'biometric') {
         handleBiometric();
       }
@@ -52,20 +72,31 @@ export default function AppLockScreen() {
 
   const handleNumpad = async (key: string) => {
     if (key === '') return;
+    const currentPin = getValues('pin');
+
     if (key === '⌫') {
-      setPin((p) => p.slice(0, -1));
+      setValue('pin', currentPin.slice(0, -1), { shouldValidate: false });
       setError('');
       return;
     }
 
-    const next = pin + key;
-    setPin(next);
+    const next = `${currentPin}${key}`.slice(0, PIN_LENGTH);
+    setValue('pin', next, { shouldValidate: false });
+    setError('');
 
     if (next.length === PIN_LENGTH) {
+      const parsedPin = pinFormSchema.safeParse({ pin: next });
+      if (!parsedPin.success) {
+        shake();
+        reset({ pin: '' });
+        setError(parsedPin.error.issues[0]?.message ?? 'Invalid PIN.');
+        return;
+      }
+
       const success = await unlockApp(next);
       if (!success) {
         shake();
-        setPin('');
+        reset({ pin: '' });
         setError('Incorrect PIN. Please try again.');
       }
     }
@@ -81,6 +112,9 @@ export default function AppLockScreen() {
   const gradientColors: [string, string] = isDark
     ? ['#020617', '#0d1b35']
     : ['#eef2ff', colors.canvas];
+  const isBiometric = method === 'biometric';
+  const isPin = method === 'pin';
+  const pin = getValues('pin');
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.canvas }}>
@@ -108,26 +142,28 @@ export default function AppLockScreen() {
               App Locked
             </Text>
             <Text className="text-center text-[15px]" style={{ color: colors.fgSecondary }}>
-              Enter your PIN to continue
+              {isBiometric ? 'Use local authentication to continue' : 'Enter your PIN to continue'}
             </Text>
           </View>
         </View>
 
-        <Animated.View
-          className="mb-8 flex-row justify-center gap-4"
-          style={{ transform: [{ translateX: shakeAnim }] }}>
-          {Array.from({ length: PIN_LENGTH }).map((_, i) => (
-            <View
-              key={i}
-              className="h-[20px] w-[20px] rounded-full border-2"
-              style={{
-                backgroundColor: i < pin.length ? colors.primary : colors.muted,
-                borderColor: i < pin.length ? colors.primary : colors.borderStrong,
-                transform: [{ scale: i < pin.length ? 1.15 : 1 }],
-              }}
-            />
-          ))}
-        </Animated.View>
+        {methodResolved && isPin && (
+          <Animated.View
+            className="mb-8 flex-row justify-center gap-4"
+            style={{ transform: [{ translateX: shakeAnim }] }}>
+            {Array.from({ length: PIN_LENGTH }).map((_, i) => (
+              <View
+                key={i}
+                className="h-[20px] w-[20px] rounded-full border-2"
+                style={{
+                  backgroundColor: i < pin.length ? colors.primary : colors.muted,
+                  borderColor: i < pin.length ? colors.primary : colors.borderStrong,
+                  transform: [{ scale: i < pin.length ? 1.15 : 1 }],
+                }}
+              />
+            ))}
+          </Animated.View>
+        )}
 
         {!!error && (
           <Text className="mb-8 text-center text-[14px] font-medium" style={{ color: colors.error }}>
@@ -135,7 +171,7 @@ export default function AppLockScreen() {
           </Text>
         )}
 
-        {method === 'biometric' && (
+        {methodResolved && isBiometric && (
           <Pressable
             onPress={handleBiometric}
             className="mb-8 h-14 w-14 self-center items-center justify-center rounded-full"
@@ -144,42 +180,44 @@ export default function AppLockScreen() {
           </Pressable>
         )}
 
-        <View
-          className={cn('mt-auto w-full overflow-hidden rounded-[24px] border')}
-          style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-          {NUMPAD_ROWS.map((row, rowIndex) => (
-            <View
-              key={rowIndex}
-              className="h-[76px] w-full flex-row"
-              style={{
-                borderBottomWidth: rowIndex === 3 ? 0 : 1,
-                borderColor: colors.border,
-              }}>
-              {row.map((key, colIndex) => (
-                <Pressable
-                  key={colIndex}
-                  className="flex-1 items-center justify-center"
-                  style={({ pressed }) => ({
-                    backgroundColor: pressed && key ? colors.muted : 'transparent',
-                    borderRightWidth: colIndex === 2 ? 0 : 1,
-                    borderColor: colors.border,
-                  })}
-                  onPress={() => handleNumpad(key)}
-                  disabled={key === ''}>
-                  {key === '⌫' ? (
-                    <MaterialIcons name="backspace" size={26} color={colors.primary} />
-                  ) : (
-                    <Text
-                      className="text-[28px] font-medium"
-                      style={{ color: colors.foreground }}>
-                      {key}
-                    </Text>
-                  )}
-                </Pressable>
-              ))}
-            </View>
-          ))}
-        </View>
+        {methodResolved && isPin && (
+          <View
+            className={cn('mt-auto w-full overflow-hidden rounded-[24px] border')}
+            style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+            {NUMPAD_ROWS.map((row, rowIndex) => (
+              <View
+                key={rowIndex}
+                className="h-[76px] w-full flex-row"
+                style={{
+                  borderBottomWidth: rowIndex === 3 ? 0 : 1,
+                  borderColor: colors.border,
+                }}>
+                {row.map((key, colIndex) => (
+                  <Pressable
+                    key={colIndex}
+                    className="flex-1 items-center justify-center"
+                    style={({ pressed }) => ({
+                      backgroundColor: pressed && key ? colors.muted : 'transparent',
+                      borderRightWidth: colIndex === 2 ? 0 : 1,
+                      borderColor: colors.border,
+                    })}
+                    onPress={() => handleNumpad(key)}
+                    disabled={key === ''}>
+                    {key === '⌫' ? (
+                      <MaterialIcons name="backspace" size={26} color={colors.primary} />
+                    ) : (
+                      <Text
+                        className="text-[28px] font-medium"
+                        style={{ color: colors.foreground }}>
+                        {key}
+                      </Text>
+                    )}
+                  </Pressable>
+                ))}
+              </View>
+            ))}
+          </View>
+        )}
 
         <Pressable
           onPress={() => logout()}

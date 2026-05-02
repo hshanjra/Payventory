@@ -8,6 +8,8 @@ export default function AuthLayout() {
       <Stack.Screen name="login-password" options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="login-otp" options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="app-lock-setup" options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="app-lock" options={{ animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="pos-setup" options={{ animation: 'slide_from_right' }} />
     </Stack>
   );
 }

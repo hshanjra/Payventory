@@ -16,17 +16,35 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/useTheme';
 import { useAuthCtx } from '@/contexts/auth';
 import { Alert, ActivityIndicator } from 'react-native';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const loginPasswordSchema = z.object({
+  password: z.string().min(1, 'Password is required'),
+});
+type LoginPasswordFormValues = z.infer<typeof loginPasswordSchema>;
 
 export default function LoginPasswordScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
 
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useAuthCtx();
+  const {
+    setValue,
+    watch,
+    trigger,
+    formState: { errors },
+  } = useForm<LoginPasswordFormValues>({
+    resolver: zodResolver(loginPasswordSchema),
+    defaultValues: { password: '' },
+    mode: 'onSubmit',
+  });
+  const password = watch('password');
 
   // Card entrance animation
   const cardAnim = useRef(new Animated.Value(0)).current;
@@ -114,10 +132,13 @@ export default function LoginPasswordScreen() {
                 placeholder="Enter your password"
                 placeholderTextColor={colors.fgMuted}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(value) => setValue('password', value, { shouldValidate: false })}
                 secureTextEntry={!showPassword}
                 onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
+                onBlur={async () => {
+                  setPasswordFocused(false);
+                  await trigger('password');
+                }}
                 autoFocus
               />
               <Pressable
@@ -133,6 +154,11 @@ export default function LoginPasswordScreen() {
                 Forgot password?
               </Text>
             </Pressable>
+            {!!errors.password?.message && (
+              <Text className="text-[13px] font-medium" style={{ color: colors.error }}>
+                {errors.password.message}
+              </Text>
+            )}
           </View>
 
           {/* Sign in button */}
@@ -141,7 +167,8 @@ export default function LoginPasswordScreen() {
             style={({ pressed }) => (pressed || loading) ? { opacity: 0.88, transform: [{ scale: 0.975 }] } : {}}
             disabled={loading}
             onPress={async () => {
-              if (!password) return;
+              const isValid = await trigger('password');
+              if (!isValid) return;
               setLoading(true);
               try {
                 await login(email, 'emailpass', password);

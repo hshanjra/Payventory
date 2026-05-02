@@ -8,10 +8,50 @@ import { useTheme } from '@/theme/useTheme';
 import { cn } from '@/lib/utils';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useAuthCtx } from '@/contexts/auth';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 type LockMethod = 'pin' | 'biometric';
 
 const PIN_LENGTH = 4;
+const appLockSetupSchema = z
+  .object({
+    method: z.enum(['pin', 'biometric']),
+    pin: z
+      .string()
+      .regex(/^\d*$/, 'PIN must contain only digits')
+      .max(PIN_LENGTH, `PIN must be ${PIN_LENGTH} digits`),
+    confirmPin: z
+      .string()
+      .regex(/^\d*$/, 'PIN must contain only digits')
+      .max(PIN_LENGTH, `PIN must be ${PIN_LENGTH} digits`),
+  })
+  .superRefine((values, ctx) => {
+    if (values.method !== 'pin') return;
+    if (values.pin.length > 0 && values.pin.length < PIN_LENGTH) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['pin'],
+        message: `PIN must be ${PIN_LENGTH} digits`,
+      });
+    }
+    if (values.confirmPin.length > 0 && values.confirmPin.length < PIN_LENGTH) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['confirmPin'],
+        message: `PIN must be ${PIN_LENGTH} digits`,
+      });
+    }
+    if (values.confirmPin.length === PIN_LENGTH && values.pin !== values.confirmPin) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['confirmPin'],
+        message: "PINs don't match. Try again.",
+      });
+    }
+  });
+type AppLockSetupFormValues = z.infer<typeof appLockSetupSchema>;
 const NUMPAD_ROWS = [
   ['1', '2', '3'],
   ['4', '5', '6'],
@@ -24,12 +64,21 @@ export default function AppLockSetupScreen() {
   const { colors, isDark } = useTheme();
   const { setupAppLock } = useAuthCtx();
 
-  const [method, setMethod] = useState<LockMethod>('pin');
   const [step, setStep] = useState<'choose' | 'set' | 'confirm'>('choose');
-  const [pin, setPin] = useState('');
-  const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const { setValue, getValues, trigger, watch, reset } = useForm<AppLockSetupFormValues>({
+    resolver: zodResolver(appLockSetupSchema),
+    defaultValues: {
+      method: 'pin',
+      pin: '',
+      confirmPin: '',
+    },
+    mode: 'onSubmit',
+  });
+  const method = watch('method') as LockMethod;
+  const pin = watch('pin');
+  const confirmPin = watch('confirmPin');
 
   const cardAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -57,30 +106,35 @@ export default function AppLockSetupScreen() {
   const handleNumpad = (key: string) => {
     if (key === '') return;
     if (key === '⌫') {
-      if (step === 'set') setPin((p) => p.slice(0, -1));
-      if (step === 'confirm') setConfirmPin((p) => p.slice(0, -1));
+      if (step === 'set') setValue('pin', pin.slice(0, -1), { shouldValidate: false });
+      if (step === 'confirm')
+        setValue('confirmPin', confirmPin.slice(0, -1), { shouldValidate: false });
       setError('');
       return;
     }
     if (step === 'set') {
-      const next = pin + key;
-      setPin(next);
+      const next = `${pin}${key}`.slice(0, PIN_LENGTH);
+      setValue('pin', next, { shouldValidate: false });
       if (next.length === PIN_LENGTH) setTimeout(() => setStep('confirm'), 300);
     } else if (step === 'confirm') {
-      const next = confirmPin + key;
-      setConfirmPin(next);
+      const next = `${confirmPin}${key}`.slice(0, PIN_LENGTH);
+      setValue('confirmPin', next, { shouldValidate: false });
       if (next.length === PIN_LENGTH) {
-        if (next === pin) {
-          setupAppLock('pin', next).then(() => {
+        const parsed = appLockSetupSchema.safeParse({ ...getValues(), confirmPin: next });
+        if (parsed.success) {
+          setupAppLock('pin', parsed.data.pin).then(() => {
             setTimeout(() => setSuccess(true), 250);
           });
         } else {
           shake();
           setTimeout(() => {
             setStep('set');
-            setPin('');
-            setConfirmPin('');
-            setError("PINs don't match. Try again.");
+            setValue('pin', '', { shouldValidate: false });
+            setValue('confirmPin', '', { shouldValidate: false });
+            const issue = parsed.error.issues.find(
+              (item) => item.path[0] === 'confirmPin' || item.path[0] === 'pin'
+            );
+            setError(issue?.message ?? "PINs don't match. Try again.");
           }, 200);
         }
       }
@@ -197,7 +251,7 @@ export default function AppLockSetupScreen() {
                 backgroundColor: method === 'pin' ? colors.primary + '1a' : colors.muted,
                 borderColor: method === 'pin' ? colors.primary : colors.border,
               }}
-              onPress={() => setMethod('pin')}>
+              onPress={() => setValue('method', 'pin', { shouldValidate: false })}>
               <View className="flex-1 flex-row items-center gap-3.5">
                 <View
                   className="h-12 w-12 items-center justify-center rounded-[14px]"
@@ -211,7 +265,7 @@ export default function AppLockSetupScreen() {
                     PIN Code
                   </Text>
                   <Text className="text-[13px]" style={{ color: colors.fgSecondary }}>
-                    6-digit numeric PIN
+                    {PIN_LENGTH}-digit numeric PIN
                   </Text>
                 </View>
               </View>
@@ -234,7 +288,7 @@ export default function AppLockSetupScreen() {
                 backgroundColor: method === 'biometric' ? colors.primary + '1a' : colors.muted,
                 borderColor: method === 'biometric' ? colors.primary : colors.border,
               }}
-              onPress={() => setMethod('biometric')}>
+              onPress={() => setValue('method', 'biometric', { shouldValidate: false })}>
               <View className="flex-1 flex-row items-center gap-3.5">
                 <View
                   className="h-12 w-12 items-center justify-center rounded-[14px]"
@@ -271,6 +325,8 @@ export default function AppLockSetupScreen() {
               onPress={async () => {
                 setError('');
                 if (method === 'pin') {
+                  const isMethodValid = await trigger('method');
+                  if (!isMethodValid) return;
                   setStep('set');
                 } else {
                   // Attempt authentication (will use Biometric if available, otherwise fallback to device PIN)
@@ -400,8 +456,7 @@ export default function AppLockSetupScreen() {
             <Pressable
               onPress={() => {
                 setStep('choose');
-                setPin('');
-                setConfirmPin('');
+                reset({ method, pin: '', confirmPin: '' });
                 setError('');
               }}
               className="self-center">

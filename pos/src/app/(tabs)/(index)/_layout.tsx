@@ -4,6 +4,7 @@ export default function IndexLayout() {
   return (
     <Stack>
       <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="recent-orders" options={{ headerShown: false }} />
     </Stack>
   );
 }
