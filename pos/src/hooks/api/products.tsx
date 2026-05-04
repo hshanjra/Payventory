@@ -8,7 +8,15 @@ import {
   AdminProductTagListResponse,
   AdminProductVariantListResponse,
 } from '@medusajs/types';
-import { QueryKey, useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { BaseProductVariantParams } from '@medusajs/types/dist/http/product/common';
+import {
+  InfiniteData,
+  QueryKey,
+  UndefinedInitialDataInfiniteOptions,
+  useInfiniteQuery,
+  useQuery,
+  UseQueryOptions,
+} from '@tanstack/react-query';
 
 const PRODUCTS_QUERY_KEY = 'products';
 export const productsQueryKeys = queryKeysFactory(PRODUCTS_QUERY_KEY);
@@ -19,45 +27,117 @@ export const productVariantQueryKeys = queryKeysFactory(PRODUCT_VARIANT_QUERY_KE
 const PRODUCT_TAGS_QUERY_KEY = 'product_tags';
 export const productTagsQueryKeys = queryKeysFactory(PRODUCT_TAGS_QUERY_KEY);
 
+const PER_PAGE = 20;
+
 export const useProducts = (
-  query?: AdminProductListParams,
-  options?: Omit<UseQueryOptionsWrapper<AdminProductListResponse>, 'queryKey' | 'queryFn'>
+  query?: Omit<AdminProductListParams, 'limit' | 'offset'>,
+  limit = PER_PAGE,
+  options?: Omit<
+    UndefinedInitialDataInfiniteOptions<
+      AdminProductListResponse,
+      unknown,
+      InfiniteData<AdminProductListResponse>,
+      readonly unknown[],
+      number
+    >,
+    'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam' | 'getPreviousPageParam'
+  >
 ) => {
   const sdk = useMedusaSdk();
-  return useQuery({
+
+  return useInfiniteQuery({
     queryKey: productsQueryKeys.list(query),
-    queryFn: () => sdk.admin.product.list(query),
+    queryFn: async ({ pageParam = 1 }) => {
+      return sdk.admin.product.list({
+        ...query,
+        limit,
+        offset: (pageParam - 1) * limit,
+      });
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const nextPage = (lastPage.offset + lastPage.limit) / limit + 1;
+      return lastPage.count > lastPage.offset + lastPage.limit ? nextPage : undefined;
+    },
+    getPreviousPageParam: (firstPage) => {
+      const prevPage = (firstPage.offset + firstPage.limit) / limit - 1;
+      return prevPage >= 1 ? prevPage : undefined;
+    },
     ...options,
   });
 };
 
 export const useProductVariants = (
-  query?: Record<string, any>,
-  options?: UseQueryOptions<
-    AdminProductVariantListResponse,
-    FetchError,
-    AdminProductVariantListResponse,
-    QueryKey
+  query?: BaseProductVariantParams,
+  limit = PER_PAGE,
+  options?: Omit<
+    UndefinedInitialDataInfiniteOptions<
+      AdminProductVariantListResponse,
+      unknown,
+      InfiniteData<AdminProductVariantListResponse>,
+      readonly unknown[],
+      number
+    >,
+    'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam' | 'getPreviousPageParam'
   >
 ) => {
   const sdk = useMedusaSdk();
-  const { data, ...rest } = useQuery({
-    queryFn: () => sdk.admin.productVariant.list(query),
+
+  return useInfiniteQuery({
     queryKey: productVariantQueryKeys.list(query),
+    queryFn: async ({ pageParam = 1 }) => {
+      return sdk.admin.productVariant.list({
+        ...query,
+        limit,
+        offset: (pageParam - 1) * limit,
+      });
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const nextPage = (lastPage.offset + lastPage.limit) / limit + 1;
+      return lastPage.count > lastPage.offset + lastPage.limit ? nextPage : undefined;
+    },
+    getPreviousPageParam: (firstPage) => {
+      const prevPage = (firstPage.offset + firstPage.limit) / limit - 1;
+      return prevPage >= 1 ? prevPage : undefined;
+    },
     ...options,
   });
-
-  return { ...data, ...rest };
 };
 
 export const useProductTags = (
-  query?: AdminProductTagListParams,
-  options?: Omit<UseQueryOptionsWrapper<AdminProductTagListResponse>, 'queryKey' | 'queryFn'>
+  query?: Omit<AdminProductTagListParams, 'limit' | 'offset'>,
+  limit = PER_PAGE,
+  options?: Omit<
+    UndefinedInitialDataInfiniteOptions<
+      AdminProductTagListResponse,
+      unknown,
+      InfiniteData<AdminProductTagListResponse>,
+      readonly unknown[],
+      number
+    >,
+    'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam' | 'getPreviousPageParam'
+  >
 ) => {
   const sdk = useMedusaSdk();
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: productTagsQueryKeys.list(query),
-    queryFn: () => sdk.admin.productTag.list(query),
+    queryFn: async ({ pageParam = 1 }) => {
+      return sdk.admin.productTag.list({
+        ...query,
+        limit,
+        offset: (pageParam - 1) * limit,
+      });
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const nextPage = (lastPage.offset + lastPage.limit) / limit + 1;
+      return lastPage.count > lastPage.offset + lastPage.limit ? nextPage : undefined;
+    },
+    getPreviousPageParam: (firstPage) => {
+      const prevPage = (firstPage.offset + firstPage.limit) / limit - 1;
+      return prevPage >= 1 ? prevPage : undefined;
+    },
     ...options,
   });
 };

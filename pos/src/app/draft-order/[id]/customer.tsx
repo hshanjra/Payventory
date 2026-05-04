@@ -10,8 +10,6 @@ import { useMedusaSdk } from '@/contexts/auth';
 export default function SelectCustomerScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const sdk = useMedusaSdk();
-  const medusa = sdk as any;
   const queryClient = useQueryClient();
 
   const [query, setQuery] = useState('');

@@ -1,33 +1,61 @@
 import { useMedusaSdk } from '@/contexts/auth';
-import { queryKeysFactory, UseQueryOptionsWrapper } from '@/lib/query-keys-factory';
+import { queryKeysFactory } from '@/lib/query-keys-factory';
 import { FetchError } from '@medusajs/js-sdk';
 import {
   AdminCurrencyListParams,
   AdminCurrencyListResponse,
   AdminCurrencyResponse,
 } from '@medusajs/types';
-import { QueryKey, useQuery, UseQueryOptions } from '@tanstack/react-query';
+import {
+  InfiniteData,
+  QueryKey,
+  UndefinedInitialDataInfiniteOptions,
+  useInfiniteQuery,
+  useQuery,
+  UseQueryOptions,
+} from '@tanstack/react-query';
 
 const CURRENCIES_QUERY_KEY = 'currencies';
 export const currenciesQueryKeys = queryKeysFactory(CURRENCIES_QUERY_KEY);
 
-const sdk = useMedusaSdk();
+const PER_PAGE = 20;
 
 export const useCurrencies = (
-  query?: AdminCurrencyListParams,
-  limit = 20,
+  query?: Omit<AdminCurrencyListParams, 'limit' | 'offset'>,
+  limit = PER_PAGE,
   options?: Omit<
-    UseQueryOptions<AdminCurrencyListResponse, FetchError, AdminCurrencyListResponse, QueryKey>,
-    'queryFn' | 'queryKey'
+    UndefinedInitialDataInfiniteOptions<
+      AdminCurrencyListResponse,
+      unknown,
+      InfiniteData<AdminCurrencyListResponse>,
+      readonly unknown[],
+      number
+    >,
+    'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam' | 'getPreviousPageParam'
   >
 ) => {
-  const { data, ...rest } = useQuery({
-    queryFn: () => sdk.admin.currency.list({ limit, ...query }),
-    queryKey: currenciesQueryKeys.list({ limit, ...query }),
+  const sdk = useMedusaSdk();
+
+  return useInfiniteQuery({
+    queryKey: currenciesQueryKeys.list(query),
+    queryFn: async ({ pageParam = 1 }) => {
+      return sdk.admin.currency.list({
+        ...query,
+        limit,
+        offset: (pageParam - 1) * limit,
+      });
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const nextPage = (lastPage.offset + lastPage.limit) / limit + 1;
+      return lastPage.count > lastPage.offset + lastPage.limit ? nextPage : undefined;
+    },
+    getPreviousPageParam: (firstPage) => {
+      const prevPage = (firstPage.offset + firstPage.limit) / limit - 1;
+      return prevPage >= 1 ? prevPage : undefined;
+    },
     ...options,
   });
-
-  return { ...data, ...rest };
 };
 
 export const useCurrency = (
@@ -38,11 +66,11 @@ export const useCurrency = (
     'queryFn' | 'queryKey'
   >
 ) => {
-  const { data, ...rest } = useQuery({
+  const sdk = useMedusaSdk();
+
+  return useQuery({
     queryKey: currenciesQueryKeys.detail(id),
     queryFn: () => sdk.admin.currency.retrieve(id, query),
     ...options,
   });
-
-  return { ...data, ...rest };
 };

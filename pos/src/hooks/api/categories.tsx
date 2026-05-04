@@ -10,7 +10,10 @@ import {
   AdminUpdateProductCategory,
 } from '@medusajs/types';
 import {
+  InfiniteData,
   QueryKey,
+  UndefinedInitialDataInfiniteOptions,
+  useInfiniteQuery,
   useMutation,
   UseMutationOptions,
   useQuery,
@@ -43,12 +46,37 @@ export const useProductCategory = (
 export const useProductCategories = (
   query?: Omit<AdminProductCategoryListParams, 'limit' | 'offset'>,
   limit = 20,
-  options?: Omit<UseQueryOptionsWrapper<AdminProductCategoryListResponse>, 'queryKey' | 'queryFn'>
+  options?: Omit<
+    UndefinedInitialDataInfiniteOptions<
+      AdminProductCategoryListResponse,
+      unknown,
+      InfiniteData<AdminProductCategoryListResponse>,
+      readonly unknown[],
+      number
+    >,
+    'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam' | 'getPreviousPageParam'
+  >
 ) => {
   const sdk = useMedusaSdk();
-  return useQuery({
+
+  return useInfiniteQuery({
     queryKey: categoriesQueryKeys.list({ limit, ...query }),
-    queryFn: () => sdk.admin.productCategory.list({ limit, ...query }),
+    queryFn: async ({ pageParam = 1 }) => {
+      return sdk.admin.productCategory.list({
+        ...query,
+        limit,
+        offset: (pageParam - 1) * limit,
+      });
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const nextPage = (lastPage.offset + lastPage.limit) / limit + 1;
+      return lastPage.count > lastPage.offset + lastPage.limit ? nextPage : undefined;
+    },
+    getPreviousPageParam: (firstPage) => {
+      const prevPage = (firstPage.offset + firstPage.limit) / limit - 1;
+      return prevPage >= 1 ? prevPage : undefined;
+    },
     ...options,
   });
 };

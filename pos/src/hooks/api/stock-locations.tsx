@@ -7,10 +7,19 @@ import {
   AdminStockLocationResponse,
 } from '@medusajs/types';
 import { SelectParams } from '@medusajs/types';
-import { QueryKey, useQuery, UseQueryOptions } from '@tanstack/react-query';
+import {
+  InfiniteData,
+  QueryKey,
+  UndefinedInitialDataInfiniteOptions,
+  useInfiniteQuery,
+  useQuery,
+  UseQueryOptions,
+} from '@tanstack/react-query';
 
 const STOCK_LOCATIONS_QUERY_KEY = 'stock_locations';
 export const stockLocationsQueryKeys = queryKeysFactory(STOCK_LOCATIONS_QUERY_KEY);
+
+const PER_PAGE = 20;
 
 export const useStockLocation = (
   id: string,
@@ -21,33 +30,46 @@ export const useStockLocation = (
   >
 ) => {
   const sdk = useMedusaSdk();
-  const { data, ...rest } = useQuery({
+  return useQuery({
     queryFn: () => sdk.admin.stockLocation.retrieve(id, query),
     queryKey: stockLocationsQueryKeys.detail(id, query),
     ...options,
   });
-
-  return { ...data, ...rest };
 };
 
 export const useStockLocations = (
   query?: AdminStockLocationListParams,
+  limit = PER_PAGE,
   options?: Omit<
-    UseQueryOptions<
+    UndefinedInitialDataInfiniteOptions<
       AdminStockLocationListResponse,
       FetchError,
-      AdminStockLocationListResponse,
-      QueryKey
+      InfiniteData<AdminStockLocationListResponse>,
+      QueryKey,
+      number
     >,
-    'queryFn' | 'queryKey'
+    'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam' | 'getPreviousPageParam'
   >
 ) => {
   const sdk = useMedusaSdk();
-  const { data, ...rest } = useQuery({
-    queryFn: () => sdk.admin.stockLocation.list({ ...query }),
+  return useInfiniteQuery({
     queryKey: stockLocationsQueryKeys.list(query),
+    queryFn: async ({ pageParam = 1 }) => {
+      return await sdk.admin.stockLocation.list({
+        ...query,
+        limit,
+        offset: (pageParam - 1) * limit,
+      });
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const nextPage = (lastPage.offset + lastPage.limit) / limit + 1;
+      return lastPage.count > lastPage.offset + lastPage.limit ? nextPage : undefined;
+    },
+    getPreviousPageParam: (firstPage) => {
+      const prevPage = (firstPage.offset + firstPage.limit) / limit - 1;
+      return prevPage >= 1 ? prevPage : undefined;
+    },
     ...options,
   });
-
-  return { ...data, ...rest };
 };

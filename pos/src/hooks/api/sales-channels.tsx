@@ -6,10 +6,19 @@ import {
   AdminSalesChannelListResponse,
   AdminSalesChannelResponse,
 } from '@medusajs/types';
-import { QueryKey, useQuery, UseQueryOptions } from '@tanstack/react-query';
+import {
+  InfiniteData,
+  QueryKey,
+  UndefinedInitialDataInfiniteOptions,
+  useInfiniteQuery,
+  useQuery,
+  UseQueryOptions,
+} from '@tanstack/react-query';
 
 const SALES_CHANNELS_QUERY_KEY = 'sales-channels';
 export const salesChannelsQueryKeys = queryKeysFactory(SALES_CHANNELS_QUERY_KEY);
+
+const PER_PAGE = 20;
 
 export const useSalesChannel = (
   id: string,
@@ -19,33 +28,47 @@ export const useSalesChannel = (
   >
 ) => {
   const sdk = useMedusaSdk();
-  const { data, ...rest } = useQuery({
+  return useQuery({
     queryKey: salesChannelsQueryKeys.detail(id),
     queryFn: async () => sdk.admin.salesChannel.retrieve(id),
     ...options,
   });
-
-  return { ...data, ...rest };
 };
 
 export const useSalesChannels = (
-  query?: AdminSalesChannelListParams,
+  query?: Omit<AdminSalesChannelListParams, 'limit' | 'offset'>,
+  limit = PER_PAGE,
   options?: Omit<
-    UseQueryOptions<
+    UndefinedInitialDataInfiniteOptions<
       AdminSalesChannelListResponse,
-      FetchError,
-      AdminSalesChannelListResponse,
-      QueryKey
+      unknown,
+      InfiniteData<AdminSalesChannelListResponse>,
+      readonly unknown[],
+      number
     >,
-    'queryFn' | 'queryKey'
+    'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam' | 'getPreviousPageParam'
   >
 ) => {
   const sdk = useMedusaSdk();
-  const { data, ...rest } = useQuery({
-    queryFn: () => sdk.admin.salesChannel.list({ ...query }),
+
+  return useInfiniteQuery({
     queryKey: salesChannelsQueryKeys.list(query),
+    queryFn: async ({ pageParam = 1 }) => {
+      return sdk.admin.salesChannel.list({
+        ...query,
+        limit,
+        offset: (pageParam - 1) * limit,
+      });
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const nextPage = (lastPage.offset + lastPage.limit) / limit + 1;
+      return lastPage.count > lastPage.offset + lastPage.limit ? nextPage : undefined;
+    },
+    getPreviousPageParam: (firstPage) => {
+      const prevPage = (firstPage.offset + firstPage.limit) / limit - 1;
+      return prevPage >= 1 ? prevPage : undefined;
+    },
     ...options,
   });
-
-  return { ...data, ...rest };
 };
