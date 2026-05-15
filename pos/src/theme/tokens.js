@@ -87,11 +87,11 @@ const dark = {
 
   // ── Semantic states ───────────────────────────────────────────────
   success:  '#10B981',
-  successBg:'#064E3B',
+  successBg: '#064E3B',
   warning:  '#FBBF24',
-  warningBg:'#451A03',
-  error:    '#EF4444',
-  errorBg:  '#450A0A',
+  warningBg: '#451A03',
+  error:    '#94A3B8',   // slate-400 (neutral error/secondary)
+  errorBg:  '#1E293B',   // slate-800
 
   // ── Accent ────────────────────────────────────────────────────────
   accent:   '#60A5FA',   // blue-400

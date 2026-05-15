@@ -26,18 +26,18 @@ export const InventoryStatus = ({ availableQuantity, isLoading }: InventoryStatu
     <View className="flex-row items-center gap-2">
       <View
         style={{
-          width: 10,
-          height: 10,
-          borderRadius: 5,
-          backgroundColor: isOutOfStock ? colors.error : colors.success,
+          width: 8,
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: isOutOfStock ? colors.mutedFg : colors.primary,
         }}
       />
       <Text
         style={{
-          fontSize: 14,
-          fontWeight: '800',
-          color: isOutOfStock ? colors.error : colors.success,
-          letterSpacing: 0.5,
+          fontSize: 13,
+          fontWeight: '900',
+          color: isOutOfStock ? colors.mutedFg : colors.primary,
+          letterSpacing: 1,
         }}>
         {isOutOfStock ? 'OUT OF STOCK' : `${availableQuantity} UNITS IN STOCK`}
       </Text>

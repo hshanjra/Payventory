@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/useTheme';
-import { QuantityStepper } from '@/components/product/quantity-stepper';
+import { MaterialIcons } from '@expo/vector-icons';
 import { formatCurrency } from '@/lib/utils';
 import type { AdminProductVariant } from '@medusajs/types';
 
@@ -46,99 +46,124 @@ export function CartFooter({
   const buttonDisabled = !selectedVariant || isAddPending || isOutOfStock;
 
   const buttonLabel = !selectedVariant
-    ? 'Select a variant'
+    ? 'SELECT A VARIANT'
     : isOutOfStock
       ? 'OUT OF STOCK'
-      : `ADD TO CART${priceLabel ? `  ·  ${priceLabel}` : ''}`;
+      : `ADD TO CART  ·  ${priceLabel ?? ''}`;
 
-  return (
-    <View
-      style={{
-        paddingHorizontal: 20,
-        paddingTop: 16,
-        paddingBottom: 24,
-        backgroundColor: colors.surface,
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
-      }}>
-      {isInCart && cartItem ? (
-        <View style={{ gap: 16 }}>
-          <View className="flex-row items-center justify-between">
-            <Text
-              className="text-[12px] font-black uppercase tracking-widest"
-              style={{ color: colors.mutedFg }}>
-              ITEM IN CART
-            </Text>
-            <View
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 12,
-                backgroundColor: colors.primary + '15',
-              }}>
-              <Text className="text-[14px] font-black" style={{ color: colors.primary }}>
+  // Common floating style inspired by Tab Bar
+  const commonFloatingStyle = {
+    backgroundColor: colors.surface,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: isDark ? 0.5 : 0.15,
+    shadowRadius: 32,
+    elevation: 24,
+    zIndex: 100,
+  };
+
+  if (isInCart && cartItem) {
+    return (
+      <View style={[
+        styles.floatingContainer, 
+        commonFloatingStyle,
+        {
+          backgroundColor: colors.primary,
+          shadowColor: colors.primary,
+          shadowOpacity: isDark ? 0.6 : 0.4,
+        }
+      ]}>
+        <Pressable 
+          onPress={() => onDecrement(cartItem.id, cartItem.quantity - 1)}
+          disabled={isUpdatePending}
+          className="h-full w-20 items-center justify-center rounded-l-full"
+          style={({ pressed }) => ({
+            backgroundColor: pressed ? colors.primaryFg + '15' : 'transparent',
+          })}
+        >
+          <MaterialIcons name="remove" size={28} color={colors.primaryFg} />
+        </Pressable>
+        
+        <View className="flex-1 items-center justify-center">
+          {isUpdatePending ? (
+            <ActivityIndicator size="small" color={colors.primaryFg} />
+          ) : (
+            <View className="items-center">
+              <Text style={{ color: colors.primaryFg, fontSize: 20, fontVariant: ['tabular-nums'], fontWeight: '900' }}>
                 {cartItem.quantity} UNIT{cartItem.quantity > 1 ? 'S' : ''}
               </Text>
+              <Text style={{ color: colors.primaryFg, opacity: 0.8, fontSize: 11, fontWeight: '900', letterSpacing: 1.5 }}>
+                IN CART
+              </Text>
             </View>
-          </View>
-
-          <QuantityStepper
-            quantity={cartItem.quantity}
-            onIncrement={() => onIncrement(cartItem.id, cartItem.quantity + 1)}
-            onDecrement={() => onDecrement(cartItem.id, cartItem.quantity - 1)}
-            isPending={isUpdatePending}
-          />
-        </View>
-      ) : (
-        <Pressable
-          onPress={onAddToCart}
-          disabled={buttonDisabled}
-          style={({ pressed }) => ({
-            height: 64,
-            borderRadius: 16,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 12,
-            backgroundColor: isOutOfStock
-              ? colors.error
-              : !selectedVariant || isAddPending
-                ? colors.surfaceEl
-                : pressed
-                  ? isDark
-                    ? '#E2E8F0'
-                    : colors.primary + 'dd'
-                  : isDark
-                    ? '#FFFFFF'
-                    : colors.primary,
-            opacity: isAddPending ? 0.7 : 1,
-            elevation: pressed ? 0 : 4,
-            shadowColor: isOutOfStock ? colors.error : isDark ? '#FFFFFF' : colors.primary,
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: isDark ? 0.3 : 0.2,
-            shadowRadius: 10,
-          })}>
-          {isAddPending ? (
-            <ActivityIndicator size="small" color={isDark ? '#FFFFFF' : colors.primaryFg} />
-          ) : (
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: '900',
-                letterSpacing: 0.5,
-                color: isOutOfStock
-                  ? '#FFFFFF'
-                  : !selectedVariant || isAddPending
-                    ? colors.fgSecondary
-                    : isDark
-                      ? '#FFFFFF'
-                      : colors.primaryFg,
-              }}>
-              {buttonLabel}
-            </Text>
           )}
+        </View>
+
+        <Pressable 
+          onPress={() => onIncrement(cartItem.id, cartItem.quantity + 1)}
+          disabled={isUpdatePending}
+          className="h-full w-20 items-center justify-center rounded-r-full"
+          style={({ pressed }) => ({
+            backgroundColor: pressed ? colors.primaryFg + '15' : 'transparent',
+          })}
+        >
+          <MaterialIcons name="add" size={28} color={colors.primaryFg} />
         </Pressable>
-      )}
+      </View>
+    );
+  }
+
+  return (
+    <View style={[
+      styles.floatingContainer, 
+      commonFloatingStyle,
+      {
+        backgroundColor: colors.primary,
+        shadowColor: colors.primary,
+        shadowOpacity: isDark ? 0.6 : 0.4,
+        opacity: buttonDisabled ? 0.5 : 1,
+      }
+    ]}>
+      <Pressable
+        onPress={onAddToCart}
+        disabled={buttonDisabled}
+        className="w-full h-full items-center justify-center rounded-full"
+        style={({ pressed }) => ({
+          backgroundColor: pressed && !buttonDisabled ? colors.primaryFg + '15' : 'transparent',
+        })}
+      >
+        {isAddPending ? (
+          <ActivityIndicator size="small" color={colors.primaryFg} />
+        ) : (
+          <Text 
+            style={[
+              styles.buttonText, 
+              { color: colors.primaryFg }
+            ]}
+          >
+            {buttonLabel}
+          </Text>
+        )}
+      </Pressable>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  floatingContainer: {
+    position: 'absolute',
+    bottom: 34,
+    left: 24,
+    right: 24,
+    height: 72,
+    borderRadius: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+  }
+});

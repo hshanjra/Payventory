@@ -24,7 +24,7 @@ export function QuantityStepper({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: colors.surface,
+        backgroundColor: colors.primaryFg,
         borderRadius: 24,
         borderWidth: 2,
         borderColor: colors.border,
@@ -36,7 +36,7 @@ export function QuantityStepper({
         onPress={onDecrement}
         disabled={isPending}
         style={({ pressed }) => ({
-          width: 80,
+          width: 100,
           height: '100%',
           alignItems: 'center',
           justifyContent: 'center',
@@ -44,8 +44,8 @@ export function QuantityStepper({
         })}>
         <MaterialIcons
           name="remove"
-          size={32}
-          color={quantity < 1 ? colors.mutedFg : colors.foreground}
+          size={40}
+          color={quantity < 1 ? colors.mutedFg : colors.primary}
         />
       </Pressable>
 
@@ -67,9 +67,7 @@ export function QuantityStepper({
         {isPending ? (
           <ActivityIndicator size="small" color={colors.primary} />
         ) : (
-          <Text
-            className="text-[24px] font-black"
-            style={{ color: colors.foreground }}>
+          <Text className="text-[24px] font-black" style={{ color: colors.foreground }}>
             {quantity}
           </Text>
         )}
@@ -87,13 +85,13 @@ export function QuantityStepper({
         onPress={onIncrement}
         disabled={isPending}
         style={({ pressed }) => ({
-          width: 80,
+          width: 100,
           height: '100%',
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: pressed ? colors.muted : 'transparent',
         })}>
-        <MaterialIcons name="add" size={32} color={colors.foreground} />
+        <MaterialIcons name="add" size={42} color={colors.primary} />
       </Pressable>
     </View>
   );

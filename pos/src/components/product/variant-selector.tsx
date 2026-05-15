@@ -118,20 +118,20 @@ export function VariantSelector({
                     borderWidth: 2,
                     borderStyle: outOfStock ? 'dashed' : 'solid',
                     alignItems: 'center',
-                    backgroundColor: isSelected ? colors.accent + '15' : colors.surfaceEl,
+                    backgroundColor: isSelected ? colors.primary + '10' : colors.surfaceEl,
                     borderColor: isSelected
-                      ? colors.accent
+                      ? colors.primary
                       : outOfStock
-                        ? colors.border
+                        ? colors.borderStrong
                         : colors.border,
-                    opacity: outOfStock && !isSelected ? 0.6 : 1,
+                    opacity: outOfStock && !isSelected ? 0.5 : 1,
                   }}>
                   <Text
                     style={{
                       fontSize: 14,
-                      fontWeight: '800',
+                      fontWeight: '900',
                       color: isSelected
-                        ? colors.accent
+                        ? colors.primary
                         : outOfStock
                           ? colors.fgMuted
                           : colors.foreground,
@@ -143,7 +143,7 @@ export function VariantSelector({
                       style={{
                         fontSize: 9,
                         fontWeight: '900',
-                        color: colors.error,
+                        color: colors.mutedFg,
                         marginTop: 2,
                         textTransform: 'uppercase',
                       }}>
@@ -214,20 +214,20 @@ export function VariantSelector({
                         borderWidth: 2,
                         borderStyle: outOfStock ? 'dashed' : 'solid',
                         alignItems: 'center',
-                        backgroundColor: isSelected ? colors.accent + '15' : colors.surfaceEl,
+                        backgroundColor: isSelected ? colors.primary + '10' : colors.surfaceEl,
                         borderColor: isSelected
-                          ? colors.accent
+                          ? colors.primary
                           : outOfStock
-                            ? colors.border
+                            ? colors.borderStrong
                             : colors.border,
-                        opacity: outOfStock && !isSelected ? 0.6 : 1,
+                        opacity: outOfStock && !isSelected ? 0.5 : 1,
                       }}>
                       <Text
                         style={{
                           fontSize: 14,
-                          fontWeight: '800',
+                          fontWeight: '900',
                           color: isSelected
-                            ? colors.accent
+                            ? colors.primary
                             : outOfStock
                               ? colors.fgMuted
                               : colors.foreground,
@@ -239,7 +239,7 @@ export function VariantSelector({
                           style={{
                             fontSize: 9,
                             fontWeight: '900',
-                            color: colors.error,
+                            color: colors.mutedFg,
                             marginTop: 2,
                             textTransform: 'uppercase',
                           }}>

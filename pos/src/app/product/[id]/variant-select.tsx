@@ -155,8 +155,8 @@ export default function ProductVariantSelectScreen() {
           gap: 12,
           backgroundColor: colors.canvas,
         }}>
-        <MaterialIcons name="error-outline" size={40} color={colors.error} />
-        <Text className="text-[15px] font-semibold" style={{ color: colors.error }}>
+        <MaterialIcons name="error-outline" size={40} color={colors.mutedFg} />
+        <Text className="text-[15px] font-semibold" style={{ color: colors.mutedFg }}>
           Product not found
         </Text>
       </View>
@@ -183,7 +183,7 @@ export default function ProductVariantSelectScreen() {
         <ScrollView
           style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 40 }}>
+          contentContainerStyle={{ paddingBottom: 140 }}>
           
           {/* Images */}
           <ProductImageGallery images={(product.images ?? []) as { url: string }[]} height={260} />

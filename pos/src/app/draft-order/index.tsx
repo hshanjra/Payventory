@@ -5,21 +5,22 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { useTheme } from '@/theme/useTheme';
-import { 
-  useCurrentDraftOrder, 
-  useUpdateDraftOrderItem, 
+import {
+  useCurrentDraftOrder,
+  useUpdateDraftOrderItem,
   useUpdateDraftOrderCustomer,
   useDeleteDraftOrder,
-  DRAFT_ORDER_DEFAULT_CUSTOMER_EMAIL 
+  DRAFT_ORDER_DEFAULT_CUSTOMER_EMAIL,
 } from '@/hooks/api/draft-orders';
 
 import { OrderItemRow } from '@/components/draft-order/order-item-row';
 import { CustomerSlot } from '@/components/draft-order/customer-slot';
 import { SummarySection } from '@/components/draft-order/summary-section';
 import { EmptyCart } from '@/components/draft-order/empty-cart';
+import { cn } from '@/lib/utils';
 
 export default function DraftOrderScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [discount, setDiscount] = useState('');
 
   // ── Data ───────────────────────────────────────────────────────────────────
@@ -114,7 +115,7 @@ export default function DraftOrderScreen() {
           bottomOffset={20}
           contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40, gap: 20 }}>
+          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 140, gap: 20 }}>
           <CustomerSlot
             customer={customer}
             isGuest={isGuest}
@@ -148,35 +149,56 @@ export default function DraftOrderScreen() {
             total={total}
             currencyCode={currencyCode}
           />
+        </KeyboardAwareScrollView>
+      )}
 
-          {/* Action Row: Cancel and Checkout */}
-          <View className="mt-2 flex-row gap-4">
+      {/* Floating Action Bar */}
+      {!isLoading && !isDeleting && !isUpdatingCustomer && draftOrder && items.length > 0 && (
+        <View
+          className="absolute bottom-10 left-6 right-6 h-[76px] flex-row gap-4"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 12 },
+            shadowOpacity: isDark ? 0.4 : 0.08,
+            shadowRadius: 30,
+            elevation: 20,
+          }}>
+          <View
+            className="h-full flex-1 rounded-[38px]"
+            style={{
+              backgroundColor: colors.muted,
+            }}>
             <Pressable
               onPress={handleCancelOrder}
               disabled={isDeleting}
-              className="h-16 flex-1 items-center justify-center rounded-2xl border-2"
-              style={{ borderColor: colors.error + '40', backgroundColor: colors.error + '05' }}>
+              className="h-full w-full items-center justify-center rounded-[38px]"
+              style={() => ({
+                opacity: isDeleting ? 0.7 : 1,
+              })}>
               {isDeleting ? (
-                <ActivityIndicator size="small" color={colors.error} />
+                <ActivityIndicator size="small" color={colors.foreground} />
               ) : (
-                <Text
-                  className="text-[15px] font-black tracking-widest"
-                  style={{ color: colors.error }}>
-                  CANCEL
-                </Text>
+                <MaterialIcons name="close" size={24} color={colors.foreground} />
               )}
             </Pressable>
+          </View>
 
+          <View
+            className="h-full flex-[3] rounded-[38px]"
+            style={{
+              backgroundColor: colors.primary,
+              shadowColor: colors.primary,
+              shadowOpacity: isDark ? 0.6 : 0.4,
+              shadowRadius: 15,
+              shadowOffset: { width: 0, height: 8 },
+              elevation: 10,
+            }}>
             <Pressable
               onPress={() => router.push('/draft-order/payment-method')}
-              className="h-16 flex-[2] items-center justify-center rounded-2xl shadow-lg"
-              style={{
-                backgroundColor: colors.primary,
-                shadowColor: colors.primary,
-                shadowOpacity: 0.3,
-                shadowRadius: 10,
-                elevation: 5,
-              }}>
+              className="h-full w-full items-center justify-center rounded-[38px]"
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? colors.primaryFg + '15' : 'transparent',
+              })}>
               <Text
                 className="text-[17px] font-black tracking-widest"
                 style={{ color: colors.primaryFg }}>
@@ -184,7 +206,7 @@ export default function DraftOrderScreen() {
               </Text>
             </Pressable>
           </View>
-        </KeyboardAwareScrollView>
+        </View>
       )}
     </SafeAreaView>
   );

@@ -61,8 +61,8 @@ function CustomTabBar() {
           {itemCount > 0 && (
             <View
               className="absolute -right-1.5 -top-1.5 h-5 min-w-[20px] items-center justify-center rounded-full border-2"
-              style={{ backgroundColor: colors.error, borderColor: colors.surface }}>
-              <Text className="px-1 text-[10px] font-black text-white">
+              style={{ backgroundColor: colors.primary, borderColor: colors.surface }}>
+              <Text className="px-1 text-[10px] font-black text-black">
                 {itemCount > 9 ? '9+' : itemCount}
               </Text>
             </View>

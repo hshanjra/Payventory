@@ -29,7 +29,11 @@ export function CustomerSlot({ customer, isGuest, onRemoveCustomer }: CustomerSl
             Select Customer
           </Text>
         </View>
-        <MaterialIcons name="chevron-right" size={24} color={colors.primary} />
+        <View
+          className="h-10 w-10 items-center justify-center rounded-full"
+          style={{ backgroundColor: colors.primary + '10' }}>
+          <MaterialIcons name="add" size={24} color={colors.primary} />
+        </View>
       </Pressable>
     );
   }
