@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { useTheme } from '@/theme/useTheme';
-import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { Layout } from '@/components/ui/layout';
 import { SettingsHeader } from '@/components/settings/settings-header';
 import { SettingsSection } from '@/components/settings/settings-section';
 import { SettingsItem } from '@/components/settings/settings-item';
@@ -33,7 +33,7 @@ export default function SalesChannelSettingsScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1" style={{ backgroundColor: colors.canvas }}>
+    <Layout className="px-0 pt-0">
       <Stack.Screen options={{ title: 'Sales Channel', headerShown: false }} />
       <SettingsHeader title="Sales Channel" />
 
@@ -59,6 +59,6 @@ export default function SalesChannelSettingsScreen() {
           Select the sales channel that this POS terminal should use for new orders.
         </Text>
       </ScrollView>
-    </SafeAreaView>
+    </Layout>
   );
 }

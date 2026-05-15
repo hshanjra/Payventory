@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { useTheme } from '@/theme/useTheme';
-import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { Layout } from '@/components/ui/layout';
 import { SettingsHeader } from '@/components/settings/settings-header';
 import { SettingsSection } from '@/components/settings/settings-section';
 import { SettingsItem } from '@/components/settings/settings-item';
@@ -35,7 +35,7 @@ export default function RegionSettingsScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1" style={{ backgroundColor: colors.canvas }}>
+    <Layout className="px-0 pt-0">
       <Stack.Screen options={{ title: 'Region', headerShown: false }} />
       <SettingsHeader title="Region" />
 
@@ -61,6 +61,6 @@ export default function RegionSettingsScreen() {
           Select the region for this POS terminal. This affects currency and tax calculations.
         </Text>
       </ScrollView>
-    </SafeAreaView>
+    </Layout>
   );
 }

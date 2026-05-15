@@ -11,7 +11,7 @@ import {
 } from '@/hooks/api/draft-orders';
 import { ProductImageGallery } from '@/components/product/product-image-gallery';
 import { VariantSelector } from '@/components/product/variant-selector';
-import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { Layout } from '@/components/ui/layout';
 import { ProductInfo } from '@/components/product/product-info';
 import { InventoryStatus } from '@/components/product/inventory-status';
 import { CartFooter } from '@/components/product/cart-footer';
@@ -20,7 +20,7 @@ import { useMedusaSdk } from '@/contexts/auth';
 import type { AdminProductVariant } from '@medusajs/types';
 
 export default function ProductVariantSelectScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, variant_id } = useLocalSearchParams<{ id: string; variant_id?: string }>();
   const { colors } = useTheme();
   const { defaults } = usePosSettings();
   const sdk = useMedusaSdk();
@@ -69,13 +69,17 @@ export default function ProductVariantSelectScreen() {
     return item ? { id: item.id, quantity: item.quantity ?? 0 } : null;
   }, [draftOrder, selectedVariantId]);
 
+  const isIncrementDisabled = cartItem ? cartItem.quantity >= availableQuantity : false;
+
   // ── Lifecycle: Sync Initial Selection & Fetch Inventory ──────────────────────
   useEffect(() => {
     if (variants.length > 0 && !selectedVariantId) {
-      const initial = variants.length === 1 ? variants[0].id : variants[0].id;
+      // Prioritize variant_id from params if available
+      const initial =
+        variant_id && variants.some((v) => v.id === variant_id) ? variant_id : variants[0].id;
       setSelectedVariantId(initial);
     }
-  }, [variants, selectedVariantId]);
+  }, [variants, selectedVariantId, variant_id]);
 
   useEffect(() => {
     async function fetchInventory() {
@@ -122,6 +126,7 @@ export default function ProductVariantSelectScreen() {
   };
 
   const handleIncrement = (itemId: string, newQty: number) => {
+    if (newQty > availableQuantity) return;
     updateItem({ id: itemId, update: { quantity: newQty } });
   };
 
@@ -165,18 +170,18 @@ export default function ProductVariantSelectScreen() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: colors.canvas }}>
+    <Layout className="px-0 pt-0">
       <View style={{ flex: 1 }}>
         {/* Grabber for Sheet UI */}
-        <View className="items-center py-3">
-          <View 
-            style={{ 
-              width: 40, 
-              height: 4, 
-              borderRadius: 2, 
+        <View className="-top-3 items-center py-2">
+          <View
+            style={{
+              width: 40,
+              height: 4,
+              borderRadius: 2,
               backgroundColor: colors.borderStrong,
-              opacity: 0.5
-            }} 
+              opacity: 0.5,
+            }}
           />
         </View>
 
@@ -184,7 +189,6 @@ export default function ProductVariantSelectScreen() {
           style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 140 }}>
-          
           {/* Images */}
           <ProductImageGallery images={(product.images ?? []) as { url: string }[]} height={260} />
 
@@ -220,8 +224,9 @@ export default function ProductVariantSelectScreen() {
           isAddPending={isAddPending}
           isUpdatePending={isUpdatePending}
           isOutOfStock={isOutOfStock}
+          isIncrementDisabled={isIncrementDisabled}
         />
       </View>
-    </SafeAreaView>
+    </Layout>
   );
 }

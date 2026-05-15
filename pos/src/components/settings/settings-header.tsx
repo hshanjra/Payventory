@@ -28,7 +28,7 @@ export const SettingsHeader = ({ title, showBack = true, rightElement }: Setting
         ) : (
           <View className="h-12 w-12" />
         )}
-        <Text style={{ color: colors.primary }} className="text-2xl font-black tracking-tight uppercase">
+        <Text style={{ color: colors.primary }} className="text-2xl font-black tracking-tight">
           {title}
         </Text>
         {rightElement ? (
