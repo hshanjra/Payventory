@@ -30,7 +30,9 @@ export const productTagsQueryKeys = queryKeysFactory(PRODUCT_TAGS_QUERY_KEY);
 const PER_PAGE = 20;
 
 export const useProducts = (
-  query?: Omit<AdminProductListParams, 'limit' | 'offset'>,
+  query?: Omit<AdminProductListParams, 'limit' | 'offset' | 'tags'> & {
+    tag_id?: string | string[];
+  },
   limit = PER_PAGE,
   options?: Omit<
     UndefinedInitialDataInfiniteOptions<

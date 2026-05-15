@@ -6,6 +6,7 @@ import { useOrders } from '@/hooks/api/orders';
 import { usePosSettings } from '@/contexts/settings';
 import { useProducts } from '@/hooks/api/products';
 import { useQueryClient } from '@tanstack/react-query';
+import { getTimeBasedGreeting } from '@/lib/utils';
 
 // Modular Components
 import { HomeHeader } from '@/components/home/home-header';
@@ -15,13 +16,13 @@ import { ProductCard } from '@/components/home/product-card';
 import { ProductGridLoader } from '@/components/home/product-grid-loader';
 import { SearchBar } from '@/components/home/search-bar';
 
-export default function IndexScreen() {
+export default function HomeScreen() {
   const { colors } = useTheme();
   const { defaults } = usePosSettings();
   const authState = useAuthenticated();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
-  
+
   const firstName = authState.user.name?.split(' ')[0] || 'Member';
   const store = defaults?.stockLocation;
 
@@ -35,6 +36,7 @@ export default function IndexScreen() {
     isFetchingNextPage,
   } = useProducts(
     {
+      tag_id: defaults?.departmentTag?.id,
       sales_channel_id: defaults?.salesChannel?.id,
       fields: '+variants.*,+variants.prices.*',
     },
@@ -44,7 +46,7 @@ export default function IndexScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await queryClient.invalidateQueries();
+      await queryClient.refetchQueries();
     } finally {
       setRefreshing(false);
     }
@@ -71,19 +73,19 @@ export default function IndexScreen() {
     };
   }, [ordersQuery?.pages]);
 
-  const products = useMemo(() => productsData?.pages.flatMap((p) => p.products) ?? [], [productsData]);
+  const products = useMemo(
+    () => productsData?.pages.flatMap((p) => p.products) ?? [],
+    [productsData]
+  );
 
   const renderHeader = () => (
     <View style={{ backgroundColor: colors.canvas }}>
-      <HomeHeader 
-        storeName={store?.name} 
-        storeAddress={store?.address?.address_1} 
+      <HomeHeader storeName={store?.name} storeAddress={store?.address?.address_1} />
+      <SalesOverviewCard
+        totalSalesToday={dashboardData.totalSalesToday}
+        ordersCount={dashboardData.ordersCount}
       />
-      <GreetingCard firstName={firstName} />
-      <SalesOverviewCard 
-        totalSalesToday={dashboardData.totalSalesToday} 
-        ordersCount={dashboardData.ordersCount} 
-      />
+      <GreetingCard firstName={firstName} greeting={getTimeBasedGreeting()} />
       <SearchBar />
       <View className="mb-4" />
     </View>

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { useTheme } from '@/theme/useTheme';
-import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { Layout } from '@/components/ui/layout';
 import { SettingsHeader } from '@/components/settings/settings-header';
 import { SettingsSection } from '@/components/settings/settings-section';
 import { SettingsItem } from '@/components/settings/settings-item';
@@ -32,7 +32,7 @@ export default function DepartmentSettingsScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1" style={{ backgroundColor: colors.canvas }}>
+    <Layout className="px-0 pt-0">
       <Stack.Screen options={{ title: 'Department', headerShown: false }} />
       <SettingsHeader title="Department" />
 
@@ -65,6 +65,6 @@ export default function DepartmentSettingsScreen() {
           Selecting a department will filter the products shown on the main screen to only those with the matching tag.
         </Text>
       </ScrollView>
-    </SafeAreaView>
+    </Layout>
   );
 }

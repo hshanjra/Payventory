@@ -6,7 +6,7 @@ import { useRouter, Stack } from 'expo-router';
 import { useTheme } from '@/theme/useTheme';
 import { usePosSettings } from '@/contexts/settings';
 import { useProducts } from '@/hooks/api/products';
-import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { Layout } from '@/components/ui/layout';
 import { FlashList } from '@shopify/flash-list';
 
 export default function SearchScreen() {
@@ -31,8 +31,9 @@ export default function SearchScreen() {
       fields: '+variants.*,+variants.prices.*,+variants.inventory_items.*',
     };
     if (defaults?.salesChannel?.id) params.sales_channel_id = defaults.salesChannel.id;
+    if (defaults?.departmentTag?.id) params.tag_id = defaults.departmentTag.id;
     return params;
-  }, [query, defaults?.salesChannel?.id]);
+  }, [query, defaults?.salesChannel?.id, defaults?.departmentTag?.id]);
 
   const { data: productsData, isLoading } = useProducts(productListParams, 50, {
     enabled: posDefaultsReady,
@@ -43,7 +44,7 @@ export default function SearchScreen() {
   const TypedFlashList = FlashList as any;
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1" style={{ backgroundColor: colors.canvas }}>
+    <Layout className="px-0 pt-0">
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}
@@ -160,6 +161,6 @@ export default function SearchScreen() {
           }}
         />
       )}
-    </SafeAreaView>
+    </Layout>
   );
 }
