@@ -11,99 +11,101 @@
 
 const light = {
   // ── Backgrounds ──────────────────────────────────────────────────
-  canvas:   '#f0f4f8',   // page background (warm off-white)
-  surface:  '#ffffff',   // card / sheet surface
-  surfaceEl:'#ffffff',   // elevated surface (popovers, modals)
+  canvas:   '#F8FAFC',   // slate-50 (clean, airy)
+  surface:  '#FFFFFF',   // pure white for cards
+  surfaceEl:'#FFFFFF',   // elevated surfaces
 
-  // ── Primary (Financial Blue) ──────────────────────────────────────
-  primary:  '#1a56db',
-  primaryFg:'#ffffff',
+  // ── Primary (Amber Brand) ──────────────────────────────────────────
+  primary:  '#D97706',   // amber-600 (rich amber)
+  primaryFg:'#FFFFFF',
 
   // ── Text ─────────────────────────────────────────────────────────
-  foreground: '#0d1b2a',
-  fgSecondary:'#475569',
-  fgMuted:    '#94a3b8',
+  foreground: '#0F172A', // slate-900 (deep navy-grey)
+  fgSecondary:'#475569', // slate-600
+  fgMuted:    '#94A3B8', // slate-400
 
   // ── Icons ─────────────────────────────────────────────────────────
-  icon:     '#1e3a5f',   // deep navy
+  icon:     '#1E293B',   // slate-800
 
   // ── Borders / Dividers ────────────────────────────────────────────
-  border:   '#dde3ec',
-  borderStrong:'#c7d2de',
+  border:   '#E2E8F0',   // slate-200
+  borderStrong:'#CBD5E1',// slate-300
 
   // ── Muted fills ───────────────────────────────────────────────────
-  muted:    '#eef2f7',
-  mutedFg:  '#64748b',
+  muted:    '#F1F5F9',   // slate-100
+  mutedFg:  '#64748B',   // slate-500
 
   // ── Semantic states ───────────────────────────────────────────────
   success:  '#059669',
-  successBg:'#d1fae5',
-  warning:  '#d97706',
-  warningBg:'#fef3c7',
-  error:    '#e02d3c',
-  errorBg:  '#fee2e2',
+  successBg:'#ECFDF5',
+  warning:  '#D97706',
+  warningBg:'#FFFBEB',
+  error:    '#475569',   // slate-600 (neutral error/secondary)
+  errorBg:  '#F1F5F9',   // slate-100
 
-  // ── Accent ────────────────────────────────────────────────────────
-  accent:   '#0ea5e9',   // sky-500
+  // ── Accent (Neutral/Amber) ──────────────────────────────────
+  accent:   '#94A3B8',   // slate-400
+  accentGold: '#D97706', // amber-600
 
   // ── Tab bar ───────────────────────────────────────────────────────
-  tabBarBg:    '#ffffff',
-  tabBorder:   '#e2e8f0',
-  activeTint:  '#1a56db',
-  inactiveTint:'#94a3b8',
+  tabBarBg:    '#FFFFFF',
+  tabBorder:   '#E2E8F0',
+  activeTint:  '#D97706', // amber-600
+  inactiveTint:'#94A3B8',
 
-  // ── Floating cart ─────────────────────────────────────────────────
-  cartBg:    '#ffffff',
-  cartBorder:'#dde3ec',
-  shadow:    '#1a56db',
+  // ── Floating elements ──────────────────────────────────────────────
+  cartBg:    '#0F172A',
+  cartBorder:'#1E293B',
+  shadow:    '#0F172A',
 };
 
 const dark = {
   // ── Backgrounds ──────────────────────────────────────────────────
-  canvas:   '#020617',   // slate-950
-  surface:  '#0f172a',   // slate-900
-  surfaceEl:'#1e293b',   // slate-800
+  canvas:   '#0F172A',   // slate-900
+  surface:  '#1E293B',   // slate-800
+  surfaceEl:'#334155',   // slate-700
 
-  // ── Primary ───────────────────────────────────────────────────────
-  primary:  '#3b82f6',   // blue-500 (brighter on dark)
-  primaryFg:'#ffffff',
+  // ── Primary (Amber Brand) ─────────────────────────────────────────
+  primary:  '#FBBF24',   // amber-400 (glows on dark)
+  primaryFg:'#1E293B',   // dark slate for contrast
 
   // ── Text ─────────────────────────────────────────────────────────
-  foreground: '#f0f4f8',
-  fgSecondary:'#94a3b8',
-  fgMuted:    '#475569',
+  foreground: '#F8FAFC', // slate-50
+  fgSecondary:'#CBD5E1', // slate-300
+  fgMuted:    '#475569', // slate-600
 
   // ── Icons ─────────────────────────────────────────────────────────
-  icon:     '#93c5fd',   // blue-300
+  icon:     '#CBD5E1',   // slate-300
 
   // ── Borders ───────────────────────────────────────────────────────
-  border:      '#1e293b',
-  borderStrong:'#334155',
+  border:      '#334155', // slate-700
+  borderStrong:'#475569', // slate-600
 
   // ── Muted fills ───────────────────────────────────────────────────
-  muted:   '#1e293b',
-  mutedFg: '#64748b',
+  muted:   '#334155',    // slate-700
+  mutedFg: '#64748B',    // slate-500
 
   // ── Semantic states ───────────────────────────────────────────────
-  success:  '#10b981',
-  successBg:'#064e3b',
-  warning:  '#fbbf24',
-  warningBg:'#451a03',
-  error:    '#f87171',
-  errorBg:  '#450a0a',
+  success:  '#10B981',
+  successBg:'#064E3B',
+  warning:  '#FBBF24',
+  warningBg:'#451A03',
+  error:    '#EF4444',
+  errorBg:  '#450A0A',
 
   // ── Accent ────────────────────────────────────────────────────────
-  accent:   '#38bdf8',   // sky-400
+  accent:   '#60A5FA',   // blue-400
+  accentGold: '#FBBF24',
 
   // ── Tab bar ───────────────────────────────────────────────────────
-  tabBarBg:    '#0f172a',
-  tabBorder:   '#1e293b',
-  activeTint:  '#60a5fa',  // blue-400
-  inactiveTint:'#475569',
+  tabBarBg:    '#1E293B',
+  tabBorder:   '#334155',
+  activeTint:  '#FBBF24', // amber-400
+  inactiveTint:'#64748B',
 
-  // ── Floating cart ─────────────────────────────────────────────────
-  cartBg:    '#1e293b',
-  cartBorder:'#334155',
+  // ── Floating elements ──────────────────────────────────────────────
+  cartBg:    '#F8FAFC',
+  cartBorder:'#CBD5E1',
   shadow:    '#000000',
 };
 

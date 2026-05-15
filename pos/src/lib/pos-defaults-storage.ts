@@ -1,28 +1,65 @@
 import * as SecureStore from 'expo-secure-store';
 import { z } from 'zod';
 
-export const POS_DEFAULTS_STORE_KEY = 'posDefaults';
+export const POS_DEFAULTS_STORE_KEY = 'pos_defaults';
 
-const posDefaultsStoredSchema = z.object({
-  salesChannelId: z.string(),
-  regionId: z.string(),
-  stockLocationId: z.string(),
-  departmentTagId: z.string().optional().nullable(),
+const salesChannelSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
 });
 
-export type PosDefaults = {
-  salesChannelId: string;
-  regionId: string;
-  stockLocationId: string;
-  departmentTagId?: string | null;
-};
+const baseCountrySchema = z.object({
+  id: z.string().optional(),
+  iso_2: z.string().optional(),
+  iso_3: z.string().optional(),
+  name: z.string().optional(),
+});
+
+const regionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  currency_code: z.string(),
+  automatic_taxes: z.boolean().optional(),
+  countries: z.array(baseCountrySchema.nullable()),
+});
+
+const addressSchema = z.object({
+  id: z.string(),
+  address_1: z.string(),
+  address_2: z.string().nullable(),
+  company: z.string().nullable(),
+  country_code: z.string().nullable(),
+  city: z.string().nullable(),
+  phone: z.string().nullable(),
+  postal_code: z.string().nullable(),
+  province: z.string().nullable(),
+});
+
+const stockLocationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  address: addressSchema.optional(),
+});
+
+const departmentTagSchema = z.object({
+  id: z.string(),
+  value: z.string(),
+});
+
+const posDefaultsStoredSchema = z.object({
+  salesChannel: salesChannelSchema,
+  region: regionSchema,
+  stockLocation: stockLocationSchema,
+  departmentTag: departmentTagSchema.nullable().optional(),
+});
+
+export type PosDefaults = z.infer<typeof posDefaultsStoredSchema>;
 
 export function posDefaultsAreComplete(value: PosDefaults | null): boolean {
   if (!value) return false;
   return (
-    !!value.salesChannelId?.trim() &&
-    !!value.regionId?.trim() &&
-    !!value.stockLocationId?.trim()
+    !!value.salesChannel.id.trim() && !!value.region.id.trim() && !!value.stockLocation.id.trim()
   );
 }
 
@@ -31,41 +68,25 @@ export async function readPosDefaultsFromStore(): Promise<PosDefaults | null> {
     const raw = await SecureStore.getItemAsync(POS_DEFAULTS_STORE_KEY);
     if (!raw) return null;
     const parsedJson = JSON.parse(raw);
-    const parsed = posDefaultsStoredSchema.safeParse(parsedJson);
-    if (!parsed.success) return null;
-    const v = parsed.data;
-    const next: PosDefaults = {
-      salesChannelId: v.salesChannelId.trim(),
-      regionId: v.regionId.trim(),
-      stockLocationId: v.stockLocationId.trim(),
-      departmentTagId: v.departmentTagId?.trim() || undefined,
-    };
-    if (!posDefaultsAreComplete(next)) return null;
-    return next;
+
+    if (!posDefaultsAreComplete(parsedJson)) return null;
+    return parsedJson;
   } catch {
     return null;
   }
 }
 
 export async function writePosDefaultsToStore(next: PosDefaults): Promise<void> {
-  const normalized: PosDefaults = {
-    salesChannelId: next.salesChannelId.trim(),
-    regionId: next.regionId.trim(),
-    stockLocationId: next.stockLocationId.trim(),
-    departmentTagId: next.departmentTagId?.trim() || undefined,
-  };
-  if (!posDefaultsAreComplete(normalized)) {
+  if (!posDefaultsAreComplete(next)) {
     throw new Error('Invalid POS defaults');
   }
-  const toStore: Record<string, string> = {
-    salesChannelId: normalized.salesChannelId,
-    regionId: normalized.regionId,
-    stockLocationId: normalized.stockLocationId,
-  };
-  if (normalized.departmentTagId) {
-    toStore.departmentTagId = normalized.departmentTagId;
+
+  const parsed = posDefaultsStoredSchema.safeParse(next);
+  if (!parsed.success) {
+    console.log(parsed.error);
+    throw new Error('Invalid POS defaults');
   }
-  await SecureStore.setItemAsync(POS_DEFAULTS_STORE_KEY, JSON.stringify(toStore));
+  await SecureStore.setItemAsync(POS_DEFAULTS_STORE_KEY, JSON.stringify(next));
 }
 
 export async function clearPosDefaultsFromStore(): Promise<void> {

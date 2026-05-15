@@ -1,3 +1,4 @@
+import { AdminStockLocation } from '@medusajs/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -12,7 +13,7 @@ export const formatCurrency = (amount: number, currency = 'INR') =>
     maximumFractionDigits: 2,
   }).format(amount);
 
-export const formatDate = (dateString?: string) => {
+export const formatDate = (dateString?: Date | string) => {
   if (!dateString) return '--';
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) return '--';
