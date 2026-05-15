@@ -26,8 +26,10 @@ import { FetchError } from '@medusajs/js-sdk';
 import { useCallback } from 'react';
 import { usePosSettings } from '@/contexts/settings';
 
+import { SECURE_STORE_KEYS } from '@/lib/secure-store-keys';
+
 const DRAFT_ORDER_QUERY_KEY = 'draft_order';
-const DRAFT_ORDER_ID_STORAGE_KEY = 'draft_order_id';
+const DRAFT_ORDER_ID_STORAGE_KEY = SECURE_STORE_KEYS.DRAFT_ORDER_ID;
 export const DRAFT_ORDER_DEFAULT_CUSTOMER_EMAIL = 'noreply+pos-guest@djf.in';
 
 // ─── Concurrency Management ──────────────────────────────────────────────────

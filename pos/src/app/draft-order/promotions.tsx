@@ -3,7 +3,7 @@ import { View, Text, Pressable, TextInput, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/useTheme';
-import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { Layout } from '@/components/ui/layout';
 import { useCurrentDraftOrder } from '@/hooks/api/draft-orders';
 import { formatCurrency } from '@/lib/utils';
 
@@ -16,7 +16,7 @@ export default function PromotionsScreen() {
   const [discountCode, setDiscountCode] = useState('');
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.surface }} className="px-6 pt-8">
+    <Layout>
       <View className="mb-6 flex-row items-center justify-between">
         <Text style={{ color: colors.foreground }} className="text-2xl font-black tracking-tight">
           PROMOTIONS
@@ -97,6 +97,6 @@ export default function PromotionsScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </Layout>
   );
 }

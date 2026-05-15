@@ -5,7 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, Stack } from 'expo-router';
 import { useTheme } from '@/theme/useTheme';
 import { useCustomers } from '@/hooks/api/customers';
-import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { Layout } from '@/components/ui/layout';
 
 export default function CustomersScreen() {
   const { colors } = useTheme();
@@ -16,11 +16,11 @@ export default function CustomersScreen() {
   const TypedFlashList = FlashList as any;
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1" style={{ backgroundColor: colors.canvas }}>
+    <Layout>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}
-      <View className="px-6 pb-6 pt-4">
+      <View className="pb-6">
         <View className="mb-6 flex-row items-center justify-between">
           <Pressable 
             onPress={() => router.back()}
@@ -45,7 +45,7 @@ export default function CustomersScreen() {
           data={customers}
           keyExtractor={(item: any) => item.id}
           estimatedItemSize={100}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
+          contentContainerStyle={{ paddingBottom: 40 }}
           ListEmptyComponent={
             <View className="mt-20 items-center">
               <MaterialIcons name="people" size={64} color={colors.muted} />
@@ -82,6 +82,6 @@ export default function CustomersScreen() {
           )}
         />
       )}
-    </SafeAreaView>
+    </Layout>
   );
 }

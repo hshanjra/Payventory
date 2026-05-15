@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, Platform } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { Layout } from '@/components/ui/layout';
 import { useTheme } from '@/theme/useTheme';
 import {
   useCurrentDraftOrder,
@@ -11,6 +11,7 @@ import {
   useUpdateDraftOrderCustomer,
   useDeleteDraftOrder,
   DRAFT_ORDER_DEFAULT_CUSTOMER_EMAIL,
+  useAddDraftOrderPromotions,
 } from '@/hooks/api/draft-orders';
 
 import { OrderItemRow } from '@/components/draft-order/order-item-row';
@@ -18,10 +19,12 @@ import { CustomerSlot } from '@/components/draft-order/customer-slot';
 import { SummarySection } from '@/components/draft-order/summary-section';
 import { EmptyCart } from '@/components/draft-order/empty-cart';
 import { cn } from '@/lib/utils';
+import { Prompt } from '@/components/ui/prompt';
 
 export default function DraftOrderScreen() {
   const { colors, isDark } = useTheme();
   const [discount, setDiscount] = useState('');
+  const [showCancelPrompt, setShowCancelPrompt] = useState(false);
 
   // ── Data ───────────────────────────────────────────────────────────────────
   const { data: draftOrderData, isLoading } = useCurrentDraftOrder();
@@ -34,6 +37,7 @@ export default function DraftOrderScreen() {
   } = useUpdateDraftOrderItem();
   const { mutate: updateCustomer, isPending: isUpdatingCustomer } = useUpdateDraftOrderCustomer();
   const { mutate: deleteDraftOrder, isPending: isDeleting } = useDeleteDraftOrder();
+  const { mutate: addPromotion, isPending: isAddingPromotion } = useAddDraftOrderPromotions();
 
   // ── Derived values ─────────────────────────────────────────────────────────
   const items = (draftOrder?.items ?? []) as any[];
@@ -45,6 +49,16 @@ export default function DraftOrderScreen() {
   const isGuest = !customer || customer.email === DRAFT_ORDER_DEFAULT_CUSTOMER_EMAIL;
 
   // ── Handlers ───────────────────────────────────────────────────────────────
+  const handleApplyDiscount = () => {
+    if (!discount) return;
+
+    // For now, we assume the discount is a percentage.
+    // In a real Medusa setup, you'd apply a promotion code.
+    // We'll just alert for now or try to apply a code if it follows a pattern.
+    // Alert.alert('Apply Discount', `Applying ${discount}% discount to order.`);
+    // addPromotion({ promo_codes: [`PERCENT_${discount}`] });
+  };
+
   const handleDecrement = (itemId: string, newQty: number) => {
     updateItem({ id: itemId, update: { quantity: Math.max(0, newQty) } });
   };
@@ -58,31 +72,30 @@ export default function DraftOrderScreen() {
   };
 
   const handleCancelOrder = () => {
-    Alert.alert(
-      'Cancel Order',
-      'Are you sure you want to cancel this order? This will remove all items and reset the cart.',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: () => {
-            deleteDraftOrder(undefined, {
-              onSuccess: () => router.replace('/(tabs)'),
-            });
-          },
-        },
-      ]
-    );
+    setShowCancelPrompt(true);
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView
-      edges={['top', 'bottom']}
-      className="flex-1"
-      style={{ backgroundColor: colors.canvas }}>
+    <Layout className="px-0 pt-0">
       <Stack.Screen options={{ headerShown: false }} />
+
+      <Prompt
+        visible={showCancelPrompt}
+        title="Cancel Order?"
+        submitText="Yes, Cancel"
+        cancelText="No"
+        onSubmit={() => {
+          setShowCancelPrompt(false);
+          deleteDraftOrder(undefined, {
+            onSuccess: () => router.replace('/'),
+          });
+        }}
+        onClose={() => setShowCancelPrompt(false)}>
+        <Text style={{ color: colors.fgSecondary }} className="mb-4 text-center">
+          Are you sure you want to cancel this order? This will remove all items and reset the cart.
+        </Text>
+      </Prompt>
 
       {/* Header */}
       <View className="px-6 pb-4 pt-4">
@@ -94,7 +107,7 @@ export default function DraftOrderScreen() {
             <MaterialIcons name="arrow-back-ios-new" size={20} color={colors.foreground} />
           </Pressable>
           <Text style={{ color: colors.foreground }} className="text-2xl font-black tracking-tight">
-            CHECKOUT
+            Checkout
           </Text>
         </View>
       </View>
@@ -145,6 +158,7 @@ export default function DraftOrderScreen() {
           <SummarySection
             discount={discount}
             setDiscount={setDiscount}
+            onApplyDiscount={handleApplyDiscount}
             subtotal={subtotal}
             total={total}
             currencyCode={currencyCode}
@@ -202,12 +216,13 @@ export default function DraftOrderScreen() {
               <Text
                 className="text-[17px] font-black tracking-widest"
                 style={{ color: colors.primaryFg }}>
-                CHECKOUT
+                Checkout
               </Text>
             </Pressable>
           </View>
         </View>
       )}
-    </SafeAreaView>
+    </Layout>
   );
 }
+

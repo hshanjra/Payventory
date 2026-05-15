@@ -1,6 +1,5 @@
 import { useMedusaSdk } from '@/contexts/auth';
-import { queryClient } from '@/lib/query-client';
-import { queryKeysFactory, UseQueryOptionsWrapper } from '@/lib/query-keys-factory';
+import { queryKeysFactory } from '@/lib/query-keys-factory';
 import { FetchError } from '@medusajs/js-sdk';
 import {
   AdminCreateProductCategory,
@@ -17,6 +16,7 @@ import {
   useMutation,
   UseMutationOptions,
   useQuery,
+  useQueryClient,
   UseQueryOptions,
 } from '@tanstack/react-query';
 
@@ -85,6 +85,8 @@ export const useCreateProductCategory = (
   options?: UseMutationOptions<AdminProductCategoryResponse, FetchError, AdminCreateProductCategory>
 ) => {
   const sdk = useMedusaSdk();
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (payload) => sdk.admin.productCategory.create(payload),
     onSuccess: (data, variables, onMutateResult, context) => {
@@ -103,6 +105,8 @@ export const useUpdateProductCategory = (
   options?: UseMutationOptions<AdminProductCategoryResponse, FetchError, AdminUpdateProductCategory>
 ) => {
   const sdk = useMedusaSdk();
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (payload) => sdk.admin.productCategory.update(id, payload),
     onSuccess: (data, variables, onMutateResult, context) => {
@@ -124,6 +128,8 @@ export const useDeleteProductCategory = (
   options?: UseMutationOptions<void, FetchError, void>
 ) => {
   const sdk = useMedusaSdk();
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async () => {
       await sdk.admin.productCategory.delete(id);

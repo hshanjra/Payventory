@@ -1,5 +1,4 @@
 import { useMedusaSdk } from '@/contexts/auth';
-import { queryClient } from '@/lib/query-client';
 import { queryKeysFactory, TQueryKey } from '@/lib/query-keys-factory';
 import { FetchError } from '@medusajs/js-sdk';
 import {
@@ -18,6 +17,7 @@ import {
   useMutation,
   UseMutationOptions,
   useQuery,
+  useQueryClient,
   UseQueryOptions,
 } from '@tanstack/react-query';
 
@@ -67,6 +67,7 @@ export const useUpdateOrder = (
   options?: UseMutationOptions<AdminOrderResponse, FetchError, AdminUpdateOrder>
 ) => {
   const sdk = useMedusaSdk();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: AdminUpdateOrder) => sdk.admin.order.update(id, payload),
     onSuccess: (data: any, variables: any, onMutateResult, context: any) => {

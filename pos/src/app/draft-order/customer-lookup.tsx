@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, Pressable, TextInput, FlatList } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { Layout } from '@/components/ui/layout';
 import { useTheme } from '@/theme/useTheme';
 import { useCreateCustomer, useCustomers } from '@/hooks/api/customers';
 import { useUpdateDraftOrderCustomer } from '@/hooks/api/draft-orders';
@@ -22,7 +22,7 @@ export default function SelectCustomerScreen() {
   const createCustomer = useCreateCustomer();
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1" style={{ backgroundColor: colors.canvas }}>
+    <Layout className="px-0 pt-0">
       <Stack.Screen options={{ headerShown: false }} />
 
       <View className="px-4 pb-3 pt-2">
@@ -134,6 +134,6 @@ export default function SelectCustomerScreen() {
           </Text>
         </Pressable>
       </View>
-    </SafeAreaView>
+    </Layout>
   );
 }
