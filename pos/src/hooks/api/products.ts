@@ -68,6 +68,7 @@ export const useProducts = (
 };
 
 export const useProductVariants = (
+  id: string,
   query?: BaseProductVariantParams,
   limit = PER_PAGE,
   options?: Omit<
@@ -86,7 +87,7 @@ export const useProductVariants = (
   return useInfiniteQuery({
     queryKey: productVariantQueryKeys.list(query),
     queryFn: async ({ pageParam = 1 }) => {
-      return sdk.admin.productVariant.list({
+      return await sdk.admin.product.listVariants(id, {
         ...query,
         limit,
         offset: (pageParam - 1) * limit,
