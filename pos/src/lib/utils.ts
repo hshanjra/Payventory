@@ -19,3 +19,11 @@ export const formatDate = (dateString?: Date | string) => {
   if (Number.isNaN(date.getTime())) return '--';
   return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
 };
+
+export const getTimeBasedGreeting = () => {
+  const hours = new Date().getHours();
+  if (hours < 12) return 'Good morning';
+  if (hours < 17) return 'Good afternoon';
+  if (hours < 21) return 'Good evening';
+  return 'Hi there';
+};

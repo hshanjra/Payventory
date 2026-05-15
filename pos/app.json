@@ -11,7 +11,23 @@
       "tsconfigPaths": true
     },
     "plugins": [
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "$(PRODUCT_NAME) needs access to your Camera for scanning products.",
+          "enableFrameProcessors": true,
+          "enableCodeScanner": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "15.5"
+          }
+        }
+      ]
     ],
     "orientation": "portrait",
     "icon": "./src/assets/icon.png",
@@ -25,13 +41,21 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your Camera for scanning products."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.CAMERA"
+      ],
+      "package": "com.hshanjra.dev.pointofsale"
     }
   }
 }

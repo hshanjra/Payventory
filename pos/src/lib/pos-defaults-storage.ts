@@ -1,7 +1,8 @@
 import * as SecureStore from 'expo-secure-store';
 import { z } from 'zod';
+import { SECURE_STORE_KEYS } from './secure-store-keys';
 
-export const POS_DEFAULTS_STORE_KEY = 'pos_defaults';
+export const POS_DEFAULTS_STORE_KEY = SECURE_STORE_KEYS.POS_DEFAULTS;
 
 const salesChannelSchema = z.object({
   id: z.string(),
