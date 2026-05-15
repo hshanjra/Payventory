@@ -8,6 +8,7 @@ interface QuantityStepperProps {
   onIncrement: () => void;
   onDecrement: () => void;
   isPending?: boolean;
+  isIncrementDisabled?: boolean;
 }
 
 export function QuantityStepper({
@@ -15,6 +16,7 @@ export function QuantityStepper({
   onIncrement,
   onDecrement,
   isPending = false,
+  isIncrementDisabled = false,
 }: QuantityStepperProps) {
   const { colors } = useTheme();
 
@@ -83,15 +85,19 @@ export function QuantityStepper({
       {/* Increment */}
       <Pressable
         onPress={onIncrement}
-        disabled={isPending}
+        disabled={isPending || isIncrementDisabled}
         style={({ pressed }) => ({
           width: 100,
           height: '100%',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: pressed ? colors.muted : 'transparent',
+          backgroundColor: pressed && !isIncrementDisabled ? colors.muted : 'transparent',
         })}>
-        <MaterialIcons name="add" size={42} color={colors.primary} />
+        <MaterialIcons
+          name="add"
+          size={42}
+          color={isIncrementDisabled ? colors.mutedFg : colors.primary}
+        />
       </Pressable>
     </View>
   );

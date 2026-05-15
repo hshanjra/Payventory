@@ -20,7 +20,10 @@ export function ProductCard({ product }: ProductCardProps) {
   
   let imageUrl = product.thumbnail;
   if (imageUrl && !imageUrl.startsWith('http')) {
-    imageUrl = `${MEDUSA_URL}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+    // Only prefix if it's a relative path
+    imageUrl = imageUrl.startsWith('/') 
+      ? `${MEDUSA_URL}${imageUrl}`
+      : `${MEDUSA_URL}/${imageUrl}`;
   }
 
   return (
@@ -34,9 +37,6 @@ export function ProductCard({ product }: ProductCardProps) {
           borderWidth: 1,
           borderColor: colors.border,
         }}>
-        <View className="absolute right-5 top-5 z-10">
-          <MaterialIcons name="favorite-border" size={20} color={colors.fgMuted} />
-        </View>
         {imageUrl ? (
           <Image
             source={{ uri: imageUrl }}
@@ -46,6 +46,10 @@ export function ProductCard({ product }: ProductCardProps) {
         ) : (
           <MaterialIcons name="inventory-2" size={48} color={colors.muted} />
         )}
+        
+        <View className="absolute bottom-4 right-4 h-10 w-10 items-center justify-center rounded-2xl" style={{ backgroundColor: colors.primary }}>
+          <MaterialIcons name="add" size={24} color={colors.primaryFg} />
+        </View>
       </View>
       <Text
         style={{ color: colors.foreground }}

@@ -19,15 +19,15 @@ export function HomeHeader({ storeName, storeAddress }: HomeHeaderProps) {
         <View className="flex-row items-center gap-1">
           <Text
             style={{ color: colors.primary }}
-            className="text-[26px] font-black leading-[36px] tracking-tighter"
+            className="text-[20px] font-black leading-[28px] tracking-tighter"
             numberOfLines={1}>
             {storeName || 'Select Store'}
           </Text>
           <MaterialIcons
             name="keyboard-arrow-down"
-            size={24}
+            size={22}
             color={colors.foreground}
-            style={{ marginTop: 4 }}
+            style={{ marginTop: 2 }}
           />
         </View>
         <Text

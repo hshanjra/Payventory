@@ -7,6 +7,7 @@ import { formatCurrency } from '@/lib/utils';
 interface SummarySectionProps {
   discount: string;
   setDiscount: (val: string) => void;
+  onApplyDiscount?: () => void;
   subtotal: number;
   total: number;
   currencyCode: string;
@@ -15,6 +16,7 @@ interface SummarySectionProps {
 export function SummarySection({
   discount,
   setDiscount,
+  onApplyDiscount,
   subtotal,
   total,
   currencyCode,
@@ -33,16 +35,21 @@ export function SummarySection({
           style={{ backgroundColor: colors.canvas, borderColor: colors.border }}>
           <MaterialIcons name="local-offer" size={20} color={colors.fgMuted} />
           <TextInput
-            placeholder="Discount amount"
+            placeholder="Discount (%)"
             placeholderTextColor={colors.fgMuted}
-            keyboardType="numeric"
+            keyboardType="number-pad"
             value={discount}
             onChangeText={setDiscount}
             className="flex-1 ml-3 text-[15px] font-bold"
             style={{ color: colors.foreground }}
+            maxLength={3}
           />
+          <Text className="text-[15px] font-black mr-2" style={{ color: colors.fgMuted }}>
+            %
+          </Text>
         </View>
         <Pressable
+          onPress={onApplyDiscount}
           className="h-14 px-6 items-center justify-center rounded-2xl"
           style={{ backgroundColor: colors.primary }}>
           <Text className="text-[15px] font-black" style={{ color: colors.primaryFg }}>

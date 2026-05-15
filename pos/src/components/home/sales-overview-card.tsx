@@ -13,7 +13,7 @@ export function SalesOverviewCard({ totalSalesToday, ordersCount }: SalesOvervie
   const { colors } = useTheme();
 
   return (
-    <View className="px-6 pb-6 pt-2">
+    <View className="px-6 pb-6 pt-4">
       <View
         className="flex-row items-center justify-between rounded-[32px] p-7"
         style={{ backgroundColor: colors.primary }}>
@@ -21,7 +21,7 @@ export function SalesOverviewCard({ totalSalesToday, ordersCount }: SalesOvervie
           <Text
             style={{ color: colors.primaryFg }}
             className="text-[12px] font-black uppercase tracking-widest opacity-80">
-            Today's Sales
+            {"Today's Sales"}
           </Text>
           <Text
             style={{ color: colors.primaryFg }}

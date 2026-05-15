@@ -14,6 +14,7 @@ export interface CartFooterProps {
   isAddPending: boolean;
   isUpdatePending: boolean;
   isOutOfStock: boolean;
+  isIncrementDisabled?: boolean;
   selectedVariant: AdminProductVariant | null;
 }
 
@@ -26,6 +27,7 @@ export function CartFooter({
   isAddPending,
   isUpdatePending,
   isOutOfStock,
+  isIncrementDisabled = false,
   selectedVariant,
 }: CartFooterProps) {
   const { colors, isDark } = useTheme();
@@ -101,13 +103,17 @@ export function CartFooter({
 
         <Pressable 
           onPress={() => onIncrement(cartItem.id, cartItem.quantity + 1)}
-          disabled={isUpdatePending}
+          disabled={isUpdatePending || isIncrementDisabled}
           className="h-full w-20 items-center justify-center rounded-r-full"
           style={({ pressed }) => ({
-            backgroundColor: pressed ? colors.primaryFg + '15' : 'transparent',
+            backgroundColor: pressed && !isIncrementDisabled ? colors.primaryFg + '15' : 'transparent',
           })}
         >
-          <MaterialIcons name="add" size={28} color={colors.primaryFg} />
+          <MaterialIcons 
+            name="add" 
+            size={28} 
+            color={isIncrementDisabled ? colors.primaryFg + '40' : colors.primaryFg} 
+          />
         </Pressable>
       </View>
     );
