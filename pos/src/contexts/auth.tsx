@@ -4,6 +4,7 @@ import Medusa from '@medusajs/js-sdk';
 import * as SecureStore from 'expo-secure-store';
 import { clearPosDefaultsFromStore } from '@/lib/pos-defaults-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
+import { useQueryClient } from '@tanstack/react-query';
 
 export type AuthStateType =
   | {
@@ -66,6 +67,8 @@ export const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, setState] = useState<AuthStateType>({ status: 'loading' });
+
+  const queryClient = useQueryClient();
 
   const login = useCallback(
     async (email: string, strategy: 'emailpass' | 'otp', password: string | number) => {
@@ -130,9 +133,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     await SecureStore.deleteItemAsync('apiKey');
-    await SecureStore.deleteItemAsync('appPin');
-    await SecureStore.deleteItemAsync('appLockMethod');
+
     await clearPosDefaultsFromStore();
+    queryClient.invalidateQueries();
     setState({ status: 'unauthenticated' });
   }, [state.status]);
 
@@ -316,7 +319,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     </AuthContext.Provider>
   );
 };
-
 
 export const useAuthCtx = () => {
   const ctx = useContext(AuthContext);

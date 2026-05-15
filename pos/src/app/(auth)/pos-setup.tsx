@@ -137,7 +137,7 @@ export default function PosSetupScreen() {
             <Text
               className="text-[24px] font-extrabold tracking-[-0.4px]"
               style={{ color: colors.foreground }}>
-              POS Defaults
+              Set Up POS
             </Text>
             <Text
               className="text-center text-[14px] leading-[20px]"
@@ -203,20 +203,27 @@ export default function PosSetupScreen() {
           )}
 
           {/* Save button */}
-          <Pressable
-            className="mt-8 h-14 items-center justify-center rounded-xl"
-            style={({ pressed }) => ({
+          <View
+            className="mt-8 h-14 rounded-xl"
+            style={{
               backgroundColor: canSave ? colors.primary : colors.primary + '40',
-              opacity: pressed && canSave ? 0.88 : 1,
-            })}
-            disabled={!canSave}
-            onPress={() => void onSave()}>
-            {saving ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text className="text-[16px] font-bold text-white">Save & Continue</Text>
-            )}
-          </Pressable>
+            }}>
+            <Pressable
+              className="h-full w-full items-center justify-center rounded-xl"
+              style={({ pressed }) => ({
+                backgroundColor: pressed && canSave ? 'rgba(0,0,0,0.1)' : 'transparent',
+              })}
+              disabled={!canSave}
+              onPress={() => void onSave()}>
+              {saving ? (
+                <ActivityIndicator color={colors.primaryFg} />
+              ) : (
+                <Text className="text-[16px] font-bold" style={{ color: colors.primaryFg }}>
+                  Save & Continue
+                </Text>
+              )}
+            </Pressable>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </View>
