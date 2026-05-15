@@ -32,8 +32,9 @@ export type AuthContextType = {
   resentOtp: (email: string) => Promise<void>;
   validateOtp: (email: string, otp: string | number) => Promise<void>;
   logout: () => Promise<void>;
-  setupAppLock: (method: 'pin' | 'biometric', pin?: string) => Promise<void>;
-  unlockApp: (pin?: string) => Promise<boolean>;
+  setupAppLock: () => Promise<void>;
+  disableAppLock: () => Promise<void>;
+  unlockApp: () => Promise<boolean>;
 };
 
 const BASE_URL = process.env.EXPO_PUBLIC_MEDUSA_URL!;
@@ -54,6 +55,9 @@ export const AuthContext = createContext<AuthContextType>({
   },
   setupAppLock: async () => {
     throw new Error('setupAppLock function not implemented');
+  },
+  disableAppLock: async () => {
+    throw new Error('disableAppLock function not implemented');
   },
   unlockApp: async () => {
     throw new Error('unlockApp function not implemented');
@@ -132,58 +136,59 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setState({ status: 'unauthenticated' });
   }, [state.status]);
 
-  const setupAppLock = useCallback(
-    async (method: 'pin' | 'biometric', pin?: string) => {
-      if (state.status !== 'authenticated') return;
+  const setupAppLock = useCallback(async () => {
+    if (state.status !== 'authenticated') return;
 
-      await SecureStore.setItemAsync('appLockMethod', method);
-      if (method === 'pin' && pin) {
-        await SecureStore.setItemAsync('appPin', pin);
+    await SecureStore.setItemAsync('appLockMethod', 'local');
+
+    setState(
+      (prev) =>
+        ({
+          ...prev,
+          status: 'authenticated',
+          hasAppLockSetup: true,
+          isAppLocked: false,
+        }) as AuthStateType
+    );
+  }, [state.status]);
+
+  const disableAppLock = useCallback(async () => {
+    if (state.status !== 'authenticated') return;
+
+    await SecureStore.deleteItemAsync('appLockMethod');
+    await SecureStore.deleteItemAsync('appPin');
+
+    setState(
+      (prev) =>
+        ({
+          ...prev,
+          status: 'authenticated',
+          hasAppLockSetup: false,
+          isAppLocked: false,
+        }) as AuthStateType
+    );
+  }, [state.status]);
+
+  const unlockApp = useCallback(async (): Promise<boolean> => {
+    if (state.status !== 'authenticated') return false;
+
+    const method = await SecureStore.getItemAsync('appLockMethod');
+
+    if (method === 'local') {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Unlock Payventory',
+        fallbackLabel: 'Use Device Passcode',
+        disableDeviceFallback: false, // Ensure we allow PIN/Pattern fallback
+      });
+      if (result.success) {
+        setState((prev) => ({ ...prev, isAppLocked: false }) as AuthStateType);
+        return true;
       }
-
-      setState(
-        (prev) =>
-          ({
-            ...prev,
-            status: 'authenticated',
-            hasAppLockSetup: true,
-            isAppLocked: false,
-          }) as AuthStateType
-      );
-    },
-    [state.status]
-  );
-
-  const unlockApp = useCallback(
-    async (pin?: string): Promise<boolean> => {
-      if (state.status !== 'authenticated') return false;
-
-      const method = await SecureStore.getItemAsync('appLockMethod');
-
-      if (method === 'biometric') {
-        const result = await LocalAuthentication.authenticateAsync({
-          promptMessage: 'Unlock Payventory',
-          fallbackLabel: 'Use PIN',
-        });
-        if (result.success) {
-          setState((prev) => ({ ...prev, isAppLocked: false }) as AuthStateType);
-          return true;
-        }
-        return false;
-      }
-
-      if (method === 'pin' && pin) {
-        const storedPin = await SecureStore.getItemAsync('appPin');
-        if (pin === storedPin) {
-          setState((prev) => ({ ...prev, isAppLocked: false }) as AuthStateType);
-          return true;
-        }
-      }
-
       return false;
-    },
-    [state.status]
-  );
+    }
+
+    return false;
+  }, [state.status]);
 
   const resentOtp = useCallback(async (email: string) => {}, []);
   const validateOtp = useCallback(async (email: string, otp: string | number) => {
@@ -297,11 +302,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ state, login, logout, resentOtp, validateOtp, setupAppLock, unlockApp }}>
+      value={{
+        state,
+        login,
+        logout,
+        resentOtp,
+        validateOtp,
+        setupAppLock,
+        disableAppLock,
+        unlockApp,
+      }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
 
 export const useAuthCtx = () => {
   const ctx = useContext(AuthContext);

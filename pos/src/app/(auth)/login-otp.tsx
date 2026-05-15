@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/useTheme';
@@ -22,13 +22,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 const OTP_LENGTH = 6;
 const loginOtpSchema = z.object({
-  otp: z.string().regex(/^\d+$/, 'OTP must contain only digits').length(OTP_LENGTH, 'Enter the 6-digit OTP'),
+  otp: z
+    .string()
+    .regex(/^\d+$/, 'OTP must contain only digits')
+    .length(OTP_LENGTH, 'Enter the 6-digit OTP'),
 });
 type LoginOtpFormValues = z.infer<typeof loginOtpSchema>;
 
 export default function LoginOtpScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
-  const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
 
   const otpRefs = useRef<(TextInput | null)[]>([]);
@@ -50,7 +52,12 @@ export default function LoginOtpScreen() {
   // Card entrance animation
   const cardAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.spring(cardAnim, { toValue: 1, useNativeDriver: true, tension: 55, friction: 8 }).start();
+    Animated.spring(cardAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 55,
+      friction: 8,
+    }).start();
   }, []);
 
   const handleOtpChange = (val: string, idx: number) => {
@@ -61,7 +68,7 @@ export default function LoginOtpScreen() {
     setValue('otp', merged, { shouldValidate: false });
     if (digit && idx < OTP_LENGTH - 1) otpRefs.current[idx + 1]?.focus();
   };
-  
+
   const handleOtpKeyPress = (e: any, idx: number) => {
     if (e.nativeEvent.key === 'Backspace' && !otpDigits[idx] && idx > 0) {
       otpRefs.current[idx - 1]?.focus();
@@ -69,8 +76,8 @@ export default function LoginOtpScreen() {
   };
 
   const gradientColors: [string, string] = isDark
-    ? ['#020617', '#0d1b35']
-    : ['#eef2ff', colors.canvas];
+    ? ['#181002', colors.canvas]
+    : ['#FFFBEB', colors.canvas];
 
   const cardAnim_style = {
     opacity: cardAnim,
@@ -78,128 +85,146 @@ export default function LoginOtpScreen() {
   };
 
   return (
-    <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Background gradient */}
       <LinearGradient colors={gradientColors} className="absolute inset-0" />
 
-      <ScrollView
-        contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 }}
-        className="flex-grow px-5"
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Back button */}
-        <Pressable
-          className="h-10 w-10 rounded-xl items-center justify-center self-start mb-6"
-          style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)' }}
-          onPress={() => router.back()}
-        >
-          <Text className="text-[18px]" style={{ color: colors.foreground }}>←</Text>
-        </Pressable>
-
-        {/* Header */}
-        <View className="items-center gap-2 py-2 mb-6">
-          <View className="w-16 h-16 rounded-[20px] items-center justify-center mb-1"
-            style={{ backgroundColor: colors.primary + '1e' }}>
-            <MaterialIcons name="smartphone" size={32} color={colors.primary} />
-          </View>
-          <Text className="text-[28px] font-extrabold tracking-[-0.4px] text-center"
-            style={{ color: colors.foreground }}>
-            Enter OTP
-          </Text>
-          <Text className="text-[15px] text-center leading-[22px]"
-            style={{ color: colors.fgSecondary }}>
-            We've sent a 6-digit code to{'\n'}
-            <Text className="font-semibold" style={{ color: colors.foreground }}>{email}</Text>
-          </Text>
-        </View>
-
-        {/* Card */}
-        <Animated.View
-          className="rounded-3xl border p-6 gap-5 mb-6"
-          style={[
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              boxShadow: isDark
-                ? '0 16px 48px rgba(0,0,0,0.55)'
-                : '0 8px 40px rgba(26,86,219,0.1)',
-            },
-            cardAnim_style,
-          ]}
-        >
-          <View className="gap-3">
-            <Text className="text-[14px] leading-5 text-center mb-2" style={{ color: colors.fgSecondary }}>
-              Enter your code below
+      <SafeAreaView edges={['top', 'bottom']} className="flex-1">
+        <ScrollView
+          contentContainerStyle={{ paddingTop: 16, paddingBottom: 32 }}
+          className="flex-grow px-5"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          {/* Back button */}
+          <Pressable
+            className="mb-6 h-10 w-10 items-center justify-center self-start rounded-xl"
+            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)' }}
+            onPress={() => router.back()}>
+            <Text className="text-[18px]" style={{ color: colors.foreground }}>
+              ←
             </Text>
-            <View className="flex-row gap-2.5 justify-center">
-              {otpDigits.map((digit, i) => (
-                <TextInput
-                  key={i}
-                  ref={(r) => { otpRefs.current[i] = r; }}
-                  className="w-11 h-14 rounded-[12px] border-[1.5px] text-[22px] font-bold text-center"
-                  style={{
-                    backgroundColor: colors.muted,
-                    borderColor: digit ? colors.primary : colors.border,
-                    color: colors.foreground,
-                  }}
-                  value={digit}
-                  onChangeText={(v) => handleOtpChange(v, i)}
-                  onKeyPress={(e) => handleOtpKeyPress(e, i)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  textAlign="center"
-                  autoFocus={i === 0}
-                />
-              ))}
+          </Pressable>
+
+          {/* Header */}
+          <View className="mb-6 items-center gap-2 py-2">
+            <View
+              className="mb-1 h-16 w-16 items-center justify-center rounded-[20px]"
+              style={{ backgroundColor: colors.primary + '12' }}>
+              <MaterialIcons name="smartphone" size={32} color={colors.primary} />
             </View>
-            <Pressable className="self-center mt-3">
-              <Text className="text-[13px] font-medium" style={{ color: colors.primary }}>
-                Resend code
+            <Text
+              className="text-center text-[28px] font-extrabold tracking-[-0.4px]"
+              style={{ color: colors.primary }}>
+              Enter OTP
+            </Text>
+            <Text
+              className="text-center text-[15px] leading-[22px]"
+              style={{ color: colors.fgSecondary }}>
+              We've sent a 6-digit code to{'\n'}
+              <Text className="font-semibold" style={{ color: colors.foreground }}>
+                {email}
               </Text>
-            </Pressable>
-            {!!errors.otp?.message && (
-              <Text className="text-center text-[13px] font-medium" style={{ color: colors.error }}>
-                {errors.otp.message}
-              </Text>
-            )}
-            
-            {/* Sign in button */}
-            <Pressable
-              className="rounded-2xl overflow-hidden mt-3"
-              style={({ pressed }) => (pressed || loading) ? { opacity: 0.88, transform: [{ scale: 0.975 }] } : {}}
-              disabled={loading}
-              onPress={async () => {
-                const isValid = await trigger('otp');
-                if (!isValid) return;
-                setLoading(true);
-                try {
-                  await validateOtp(email, otpValue);
-                } catch (err: any) {
-                  Alert.alert('Validation Failed', err?.message || 'Check your code and try again.');
-                } finally {
-                  setLoading(false);
-                }
-              }}
-            >
-              <LinearGradient
-                colors={['#2563eb', colors.primary]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                className="h-14 items-center justify-center"
-              >
-                {loading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text className="text-[16px] font-bold text-white tracking-[0.3px]">Sign In</Text>
-                )}
-              </LinearGradient>
-            </Pressable>
+            </Text>
           </View>
-        </Animated.View>
-      </ScrollView>
+
+          {/* Card */}
+          <Animated.View
+            className="mb-6 gap-5 rounded-3xl border p-6"
+            style={[
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                boxShadow: isDark
+                  ? '0 16px 48px rgba(0,0,0,0.55)'
+                  : '0 8px 40px rgba(15,23,42,0.08)',
+              },
+              cardAnim_style,
+            ]}>
+            <View className="gap-3">
+              <Text
+                className="mb-2 text-center text-[14px] leading-5"
+                style={{ color: colors.fgSecondary }}>
+                Enter your code below
+              </Text>
+              <View className="flex-row justify-center gap-2.5">
+                {otpDigits.map((digit, i) => (
+                  <TextInput
+                    key={i}
+                    ref={(r) => {
+                      otpRefs.current[i] = r;
+                    }}
+                    className="h-14 w-11 rounded-[12px] border-[1.5px] text-center text-[22px] font-bold"
+                    style={{
+                      backgroundColor: colors.muted,
+                      borderColor: digit ? colors.primary : colors.border,
+                      color: colors.foreground,
+                    }}
+                    value={digit}
+                    onChangeText={(v) => handleOtpChange(v, i)}
+                    onKeyPress={(e) => handleOtpKeyPress(e, i)}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    textAlign="center"
+                    autoFocus={i === 0}
+                  />
+                ))}
+              </View>
+              <Pressable className="mt-3 self-center">
+                <Text className="text-[13px] font-medium" style={{ color: colors.primary }}>
+                  Resend code
+                </Text>
+              </Pressable>
+              {!!errors.otp?.message && (
+                <Text
+                  className="text-center text-[13px] font-medium"
+                  style={{ color: colors.error }}>
+                  {errors.otp.message}
+                </Text>
+              )}
+
+              {/* Sign in button */}
+              <Pressable
+                className="mt-3 overflow-hidden rounded-2xl"
+                style={({ pressed }) =>
+                  pressed || loading ? { opacity: 0.88, transform: [{ scale: 0.975 }] } : {}
+                }
+                disabled={loading}
+                onPress={async () => {
+                  const isValid = await trigger('otp');
+                  if (!isValid) return;
+                  setLoading(true);
+                  try {
+                    await validateOtp(email, otpValue);
+                  } catch (err: any) {
+                    Alert.alert(
+                      'Validation Failed',
+                      err?.message || 'Check your code and try again.'
+                    );
+                  } finally {
+                    setLoading(false);
+                  }
+                }}>
+                <View
+                  style={{ backgroundColor: colors.primary }}
+                  className="h-14 items-center justify-center">
+                  {loading ? (
+                    <ActivityIndicator color={colors.primaryFg} />
+                  ) : (
+                    <Text style={{ color: colors.primaryFg }} className="text-[16px] font-bold tracking-[0.3px]">
+                      Sign In
+                    </Text>
+                  )}
+                </View>
+              </Pressable>
+            </View>
+          </Animated.View>
+        </ScrollView>
+      </SafeAreaView>
     </KeyboardAvoidingView>
   );
 }
