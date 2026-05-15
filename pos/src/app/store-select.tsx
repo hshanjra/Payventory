@@ -1,20 +1,26 @@
 import { usePosSettings } from '@/contexts/settings';
 import { useStockLocations } from '@/hooks/api/stock-locations';
-import { Text, View, Pressable, ActivityIndicator, FlatList, Alert } from 'react-native';
+import { Text, View, Pressable, ActivityIndicator, FlatList } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/useTheme';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useDeleteDraftOrder } from '@/hooks/api/draft-orders';
 import * as SecureStore from 'expo-secure-store';
+import { Prompt } from '@/components/ui/prompt';
 
-const DRAFT_ORDER_ID_STORAGE_KEY = 'draft_order_id';
+import { SECURE_STORE_KEYS } from '@/lib/secure-store-keys';
+
+const DRAFT_ORDER_ID_STORAGE_KEY = SECURE_STORE_KEYS.DRAFT_ORDER_ID;
 
 export default function StoreSelectScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const { defaults, setDefaults, isComplete: posDefaultsReady } = usePosSettings();
   const { mutateAsync: deleteDraftOrder } = useDeleteDraftOrder();
+
+  const [pendingStore, setPendingStore] = useState<any>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const { data, isLoading } = useStockLocations(
     {
@@ -28,82 +34,109 @@ export default function StoreSelectScreen() {
     return data?.pages?.flatMap((page) => page.stock_locations || []) ?? [];
   }, [data?.pages]);
 
+  const performStoreChange = async (store: any) => {
+    const draftOrderId = await SecureStore.getItemAsync(DRAFT_ORDER_ID_STORAGE_KEY);
+    try {
+      if (draftOrderId) {
+        await deleteDraftOrder();
+      }
+
+      if (defaults) {
+        const fullStore = storeOptions.find((s) => s.id === store.id);
+        if (fullStore) {
+          await setDefaults({
+            ...defaults,
+            stockLocation: {
+              id: fullStore.id,
+              name: fullStore.name,
+              address: fullStore.address
+                ? {
+                    id: fullStore.address.id || '',
+                    address_1: fullStore.address.address_1 || '',
+                    address_2: fullStore.address.address_2 ?? null,
+                    company: fullStore.address.company ?? null,
+                    country_code: fullStore.address.country_code ?? null,
+                    city: fullStore.address.city ?? null,
+                    phone: fullStore.address.phone ?? null,
+                    postal_code: fullStore.address.postal_code ?? null,
+                    province: fullStore.address.province ?? null,
+                  }
+                : undefined,
+            },
+          });
+        }
+      }
+      router.replace('/');
+    } catch (error) {
+      console.error('Failed to change store:', error);
+    }
+  };
+
   const handleStoreSelect = async (store: any) => {
     const draftOrderId = await SecureStore.getItemAsync(DRAFT_ORDER_ID_STORAGE_KEY);
 
-    const performStoreChange = async () => {
-      try {
-        if (draftOrderId) {
-          await deleteDraftOrder();
-        }
-
-        if (defaults) {
-          const fullStore = storeOptions.find((s) => s.id === store.id);
-          if (fullStore) {
-            await setDefaults({
-              ...defaults,
-              stockLocation: {
-                id: fullStore.id,
-                name: fullStore.name,
-                address: fullStore.address
-                  ? {
-                      id: fullStore.address.id || '',
-                      address_1: fullStore.address.address_1 || '',
-                      address_2: fullStore.address.address_2 ?? null,
-                      company: fullStore.address.company ?? null,
-                      country_code: fullStore.address.country_code ?? null,
-                      city: fullStore.address.city ?? null,
-                      phone: fullStore.address.phone ?? null,
-                      postal_code: fullStore.address.postal_code ?? null,
-                      province: fullStore.address.province ?? null,
-                    }
-                  : undefined,
-              },
-            });
-          }
-        }
-        router.back();
-      } catch (error) {
-        console.error('Failed to change store:', error);
-        Alert.alert('Error', 'Failed to change store location. Please try again.');
-      }
-    };
-
     if (draftOrderId && store.id !== defaults?.stockLocation?.id) {
-      Alert.alert(
-        'Change Store?',
-        'Changing the store location will discard your current draft order. Do you want to continue?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Change Store', 
-            style: 'destructive',
-            onPress: performStoreChange 
-          },
-        ]
-      );
+      setPendingStore(store);
+      setShowConfirmDialog(true);
     } else {
-      await performStoreChange();
+      await performStoreChange(store);
     }
   };
 
   const activeStoreId = defaults?.stockLocation?.id;
+  const isFormSheet = true; // It's always a sheet now
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface }}>
+      {/* Confirmation Prompt */}
+      <Prompt
+        visible={showConfirmDialog}
+        title="Change Store?"
+        submitText="Change Store"
+        cancelText="Cancel"
+        description="Changing the store location will discard your current draft order. Do you want to continue?"
+        onSubmit={() => {
+          setShowConfirmDialog(false);
+          if (pendingStore) performStoreChange(pendingStore);
+        }}
+        onClose={() => setShowConfirmDialog(false)}
+      />
+
       {/* Fixed header — never scrolls */}
-      <View className="px-8 pb-6 pt-10">
+      <View className={isFormSheet ? "px-8 pb-6 pt-4" : "px-8 pb-6 pt-10"}>
+        {isFormSheet && (
+          <View className="items-center pb-6">
+            <View 
+              style={{ 
+                width: 40, 
+                height: 4, 
+                borderRadius: 2, 
+                backgroundColor: colors.borderStrong,
+                opacity: 0.5
+              }} 
+            />
+          </View>
+        )}
         <View className="mb-6 flex-row items-center justify-between">
-          <Text style={{ color: colors.foreground }} className="text-3xl font-black tracking-tight">
-            STORE
-          </Text>
-          <Pressable 
-            onPress={() => router.back()}
-            className="h-10 w-10 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.muted }}
-          >
-            <MaterialIcons name="close" size={20} color={colors.foreground} />
-          </Pressable>
+          <View className="flex-row items-center gap-3">
+            <View
+              className="h-10 w-10 items-center justify-center rounded-xl"
+              style={{ backgroundColor: colors.primary + '12' }}>
+              <MaterialIcons name="storefront" size={24} color={colors.primary} />
+            </View>
+            <Text style={{ color: colors.foreground }} className="text-3xl font-black tracking-tight">
+              Store
+            </Text>
+          </View>
+          {router.canGoBack() && (
+            <Pressable 
+              onPress={() => router.back()}
+              className="h-10 w-10 items-center justify-center rounded-full"
+              style={{ backgroundColor: colors.muted }}
+            >
+              <MaterialIcons name="close" size={20} color={colors.foreground} />
+            </Pressable>
+          )}
         </View>
         <Text style={{ color: colors.fgSecondary }} className="text-[15px] font-medium leading-6">
           Select the active store for processing orders and inventory management.
@@ -145,10 +178,10 @@ export default function StoreSelectScreen() {
                   <View
                     style={{ backgroundColor: isActive ? colors.primary : colors.muted }}
                     className="h-14 w-14 items-center justify-center rounded-2xl">
-                    <MaterialIcons
-                      name="business"
-                      size={28}
-                      color={isActive ? colors.primaryFg : colors.fgSecondary}
+                    <MaterialIcons 
+                      name="store" 
+                      size={32} 
+                      color={isActive ? colors.primaryFg : colors.foreground} 
                     />
                   </View>
                   <View className="ml-4 flex-1">

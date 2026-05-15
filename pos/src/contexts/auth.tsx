@@ -2,8 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 import Medusa from '@medusajs/js-sdk';
 import * as SecureStore from 'expo-secure-store';
+import { Alert } from 'react-native';
 import { clearPosDefaultsFromStore } from '@/lib/pos-defaults-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
+import { SECURE_STORE_KEYS } from '@/lib/secure-store-keys';
 import { useQueryClient } from '@tanstack/react-query';
 
 export type AuthStateType =
@@ -98,11 +100,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             Authorization: `Bearer ${apiKey}`,
           });
 
-          await SecureStore.setItemAsync('medusaUrl', BASE_URL!);
-          await SecureStore.setItemAsync('userEmail', email);
-          await SecureStore.setItemAsync('apiKey', apiKey);
+          await SecureStore.setItemAsync(SECURE_STORE_KEYS.MEDUSA_URL, BASE_URL!);
+          await SecureStore.setItemAsync(SECURE_STORE_KEYS.USER_EMAIL, email);
+          await SecureStore.setItemAsync(SECURE_STORE_KEYS.API_KEY, apiKey);
 
-          const appLockMethod = await SecureStore.getItemAsync('appLockMethod');
+          const appLockMethod = await SecureStore.getItemAsync(SECURE_STORE_KEYS.APP_LOCK_METHOD);
           const hasAppLockSetup = !!appLockMethod;
 
           setState({
@@ -129,20 +131,63 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
   const logout = useCallback(async () => {
     if (state.status !== 'authenticated') {
-      throw new Error('User is not authenticated');
+      return;
     }
 
-    await SecureStore.deleteItemAsync('apiKey');
+    const confirmed = await new Promise((resolve) => {
+      Alert.alert(
+        'Logout',
+        'Are you sure you want to logout? This will clear your session and discard any active draft order.',
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+          { text: 'Logout', style: 'destructive', onPress: () => resolve(true) },
+        ],
+        { cancelable: true, onDismiss: () => resolve(false) }
+      );
+    });
 
+    if (!confirmed) return;
+
+    try {
+      const draftOrderId = await SecureStore.getItemAsync(SECURE_STORE_KEYS.DRAFT_ORDER_ID);
+      if (draftOrderId) {
+        const sdk = new Medusa({
+          baseUrl: BASE_URL,
+          debug: false,
+          auth: {
+            type: 'jwt',
+            jwtTokenStorageMethod: 'custom',
+            storage: {
+              getItem: () => state.apiKey,
+              setItem: () => {},
+              removeItem: () => {},
+            },
+          },
+        });
+
+        const { draft_order } = await sdk.admin.draftOrder.retrieve(draftOrderId);
+        if (draft_order.items && draft_order.items.length > 0) {
+          await sdk.admin.draftOrder.delete(draftOrderId);
+        }
+      }
+    } catch (error) {
+      console.warn('Logout: Could not discard draft order', error);
+    }
+
+    await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.API_KEY);
+    await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.APP_PIN);
+    await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.APP_LOCK_METHOD);
+    await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.DRAFT_ORDER_ID);
     await clearPosDefaultsFromStore();
-    queryClient.invalidateQueries();
+
+    queryClient.clear();
     setState({ status: 'unauthenticated' });
-  }, [state.status]);
+  }, [state, queryClient]);
 
   const setupAppLock = useCallback(async () => {
     if (state.status !== 'authenticated') return;
 
-    await SecureStore.setItemAsync('appLockMethod', 'local');
+    await SecureStore.setItemAsync(SECURE_STORE_KEYS.APP_LOCK_METHOD, 'local');
 
     setState(
       (prev) =>
@@ -158,8 +203,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const disableAppLock = useCallback(async () => {
     if (state.status !== 'authenticated') return;
 
-    await SecureStore.deleteItemAsync('appLockMethod');
-    await SecureStore.deleteItemAsync('appPin');
+    await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.APP_LOCK_METHOD);
+    await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.APP_PIN);
 
     setState(
       (prev) =>
@@ -175,11 +220,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const unlockApp = useCallback(async (): Promise<boolean> => {
     if (state.status !== 'authenticated') return false;
 
-    const method = await SecureStore.getItemAsync('appLockMethod');
+    const method = await SecureStore.getItemAsync(SECURE_STORE_KEYS.APP_LOCK_METHOD);
 
     if (method === 'local') {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Unlock Payventory',
+        promptMessage: 'Unlock Divya Jyoti Foundation',
         fallbackLabel: 'Use Device Passcode',
         disableDeviceFallback: false, // Ensure we allow PIN/Pattern fallback
       });
@@ -205,9 +250,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const loadAuthState = async () => {
       try {
-        const medusaUrl = await SecureStore.getItemAsync('medusaUrl');
-        const userEmail = await SecureStore.getItemAsync('userEmail');
-        const apiKey = await SecureStore.getItemAsync('apiKey');
+        const medusaUrl = await SecureStore.getItemAsync(SECURE_STORE_KEYS.MEDUSA_URL);
+        const userEmail = await SecureStore.getItemAsync(SECURE_STORE_KEYS.USER_EMAIL);
+        const apiKey = await SecureStore.getItemAsync(SECURE_STORE_KEYS.API_KEY);
 
         if (cancelled) {
           return;
@@ -238,7 +283,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             return;
           }
 
-          const appLockMethod = await SecureStore.getItemAsync('appLockMethod');
+          const appLockMethod = await SecureStore.getItemAsync(SECURE_STORE_KEYS.APP_LOCK_METHOD);
           const hasAppLockSetup = !!appLockMethod;
 
           setState({
@@ -261,7 +306,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             return;
           }
 
-          await SecureStore.deleteItemAsync('apiKey');
+          await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.API_KEY);
 
           setState({
             status: 'unauthenticated',
@@ -273,7 +318,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           return;
         }
 
-        await SecureStore.deleteItemAsync('apiKey');
+        await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.API_KEY);
 
         // if (isUnauthorizedError(error)) {
         //   Toast.show({

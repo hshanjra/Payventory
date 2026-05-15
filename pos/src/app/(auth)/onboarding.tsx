@@ -1,18 +1,10 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Pressable, ImageBackground, Animated } from 'react-native';
+import { View, Text, Pressable, Animated } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
-import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { Layout } from '@/components/ui/layout';
 import { useTheme } from '@/theme/useTheme';
-
-const BG_IMAGE = require('@/assets/onboarding-bg.png');
-
-const FEATURES = [
-  { icon: 'bolt' as const, label: 'Lightning-fast checkout' },
-  { icon: 'bar-chart' as const, label: 'Real-time analytics' },
-  { icon: 'security' as const, label: 'Bank-grade security' },
-];
 
 export default function OnboardingScreen() {
   const { colors } = useTheme();
@@ -37,9 +29,8 @@ export default function OnboardingScreen() {
   }, []);
 
   return (
-    <SafeAreaView
-      edges={['all']}
-      className="flex-1 bg-surface"
+    <Layout
+      className="px-0 pt-0"
       style={{ backgroundColor: colors.surface }}>
       <View className="flex-1 justify-center px-8">
         <Animated.View
@@ -50,9 +41,13 @@ export default function OnboardingScreen() {
           className="gap-8">
           {/* Brand Icon */}
           <View
-            className="h-20 w-20 items-center justify-center rounded-[24px]"
+            className="h-20 w-20 items-center justify-center rounded-[24px] overflow-hidden"
             style={{ backgroundColor: colors.primary }}>
-            <MaterialIcons name="point-of-sale" size={40} color={colors.primaryFg} />
+            <Image
+              source={require('@/assets/icon.png')}
+              style={{ width: '100%', height: '100%' }}
+              contentFit="contain"
+            />
           </View>
 
           {/* Value Prop */}
@@ -107,6 +102,6 @@ export default function OnboardingScreen() {
           DIVYA JYOTI FOUNDATION
         </Text>
       </View>
-    </SafeAreaView>
+    </Layout>
   );
 }

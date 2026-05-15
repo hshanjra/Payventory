@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
-import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { LayoutWithScroll } from '@/components/ui/layout';
 import { SelectField } from '@/components/ui/select-field';
 import { useTheme } from '@/theme/useTheme';
 import { usePosSettings, type PosDefaults } from '@/contexts/settings';
@@ -112,7 +113,7 @@ export default function PosSetupScreen() {
     try {
       setSaving(true);
       await setDefaults(payload);
-      router.replace('/(tabs)');
+      router.replace('/');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save settings.');
     } finally {
@@ -123,109 +124,113 @@ export default function PosSetupScreen() {
   /* ---- Render ---- */
 
   return (
-    <View className="flex-1" style={{ backgroundColor: colors.canvas }}>
+    <LayoutWithScroll
+      contentContainerStyle={{ paddingBottom: 40 }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <SafeAreaView edges={['top', 'bottom']} className="flex-1">
-        <ScrollView
-          contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
-          className="flex-grow px-5"
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
-          {/* Header */}
-          <View className="mb-8 mt-4 items-center gap-1">
-            <Text
-              className="text-[24px] font-extrabold tracking-[-0.4px]"
-              style={{ color: colors.foreground }}>
-              Set Up POS
-            </Text>
-            <Text
-              className="text-center text-[14px] leading-[20px]"
-              style={{ color: colors.fgSecondary }}>
-              Configure your point-of-sale settings
-            </Text>
-          </View>
+      {/* Header */}
+      <View className="mb-8 mt-4 items-center gap-3">
+        <View
+          className="h-14 w-14 items-center justify-center rounded-2xl overflow-hidden"
+          style={{ backgroundColor: colors.primary + '12' }}>
+          <Image
+            source={require('@/assets/icon.png')}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="contain"
+          />
+        </View>
+        <View className="items-center gap-1">
+          <Text
+            className="text-[24px] font-extrabold tracking-[-0.4px]"
+            style={{ color: colors.foreground }}>
+            Set Up POS
+          </Text>
+          <Text
+            className="text-center text-[14px] leading-[20px]"
+            style={{ color: colors.fgSecondary }}>
+            Configure your point-of-sale settings
+          </Text>
+        </View>
+      </View>
 
-          {/* Fields */}
-          <View className="gap-5">
-            <SelectField<AdminSalesChannel>
-              label="Sales Channel"
-              placeholder="Select a sales channel"
-              selectedId={salesChannelId}
-              items={channels}
-              isLoading={channelsQuery.isLoading}
-              renderLabel={(c) => c.name}
-              renderSublabel={(c) => c.description ?? undefined}
-              onSelect={setSalesChannelId}
-            />
+      {/* Fields */}
+      <View className="gap-5">
+        <SelectField<AdminSalesChannel>
+          label="Sales Channel"
+          placeholder="Select a sales channel"
+          selectedId={salesChannelId}
+          items={channels}
+          isLoading={channelsQuery.isLoading}
+          renderLabel={(c) => c.name}
+          renderSublabel={(c) => c.description ?? undefined}
+          onSelect={setSalesChannelId}
+        />
 
-            <SelectField<AdminRegion>
-              label="Region"
-              placeholder="Select a region"
-              selectedId={regionId}
-              items={regions}
-              isLoading={regionsQuery.isLoading}
-              renderLabel={(r) => r.name}
-              renderSublabel={(r) => r.currency_code}
-              onSelect={setRegionId}
-            />
+        <SelectField<AdminRegion>
+          label="Region"
+          placeholder="Select a region"
+          selectedId={regionId}
+          items={regions}
+          isLoading={regionsQuery.isLoading}
+          renderLabel={(r) => r.name}
+          renderSublabel={(r) => r.currency_code}
+          onSelect={setRegionId}
+        />
 
-            <SelectField<AdminStockLocation>
-              label="Store"
-              placeholder="Select a store location"
-              selectedId={stockLocationId}
-              items={locations}
-              isLoading={locationsQuery.isLoading}
-              renderLabel={(l) => l.name}
-              onSelect={setStockLocationId}
-            />
+        <SelectField<AdminStockLocation>
+          label="Store"
+          placeholder="Select a store location"
+          selectedId={stockLocationId}
+          items={locations}
+          isLoading={locationsQuery.isLoading}
+          renderLabel={(l) => l.name}
+          onSelect={setStockLocationId}
+        />
 
-            <SelectField<AdminProductTag>
-              label="Department"
-              placeholder="All departments"
-              selectedId={departmentTagId}
-              items={tags}
-              isLoading={tagsQuery.isLoading}
-              renderLabel={(t) => t.value}
-              onSelect={setDepartmentTagId}
-              optional
-              optionalLabel="All departments"
-            />
-          </View>
+        <SelectField<AdminProductTag>
+          label="Department"
+          placeholder="All departments"
+          selectedId={departmentTagId}
+          items={tags}
+          isLoading={tagsQuery.isLoading}
+          renderLabel={(t) => t.value}
+          onSelect={setDepartmentTagId}
+          optional
+          optionalLabel="All departments"
+        />
+      </View>
 
-          {/* Error */}
-          {!!error && (
-            <Text
-              className="mt-4 text-center text-[14px] font-medium"
-              style={{ color: colors.error }}>
-              {error}
+      {/* Error */}
+      {!!error && (
+        <Text className="mt-4 text-center text-[14px] font-medium" style={{ color: colors.error }}>
+          {error}
+        </Text>
+      )}
+
+      {/* Save button */}
+      <View
+        className="mt-8 h-14 rounded-xl"
+        style={{
+          backgroundColor: canSave ? colors.primary : colors.primary + '40',
+        }}>
+        <Pressable
+          className="h-full w-full items-center justify-center rounded-xl"
+          style={({ pressed }) => ({
+            backgroundColor: pressed && canSave ? 'rgba(0,0,0,0.1)' : 'transparent',
+          })}
+          disabled={!canSave}
+          onPress={() => void onSave()}>
+          {saving ? (
+            <ActivityIndicator color={colors.primaryFg} />
+          ) : (
+            <Text className="text-[16px] font-bold" style={{ color: colors.primaryFg }}>
+              Save & Continue
             </Text>
           )}
-
-          {/* Save button */}
-          <View
-            className="mt-8 h-14 rounded-xl"
-            style={{
-              backgroundColor: canSave ? colors.primary : colors.primary + '40',
-            }}>
-            <Pressable
-              className="h-full w-full items-center justify-center rounded-xl"
-              style={({ pressed }) => ({
-                backgroundColor: pressed && canSave ? 'rgba(0,0,0,0.1)' : 'transparent',
-              })}
-              disabled={!canSave}
-              onPress={() => void onSave()}>
-              {saving ? (
-                <ActivityIndicator color={colors.primaryFg} />
-              ) : (
-                <Text className="text-[16px] font-bold" style={{ color: colors.primaryFg }}>
-                  Save & Continue
-                </Text>
-              )}
-            </Pressable>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </View>
+        </Pressable>
+      </View>
+    </LayoutWithScroll>
   );
 }

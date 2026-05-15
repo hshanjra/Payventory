@@ -1,10 +1,11 @@
 import { Tabs, useRouter } from 'expo-router';
 import { Platform, Text, View, Pressable } from 'react-native';
+import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
 import { useTheme } from '@/theme/useTheme';
 import { useCurrentDraftOrder } from '@/hooks/api/draft-orders';
-import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { Layout } from '@/components/ui/layout';
 
 function CustomTabBar() {
   const router = useRouter();
@@ -39,11 +40,16 @@ function CustomTabBar() {
         <MaterialIcons name="grid-view" size={26} color={colors.foreground} />
       </Pressable>
 
-      {/* Slot 2: Center Branding (Bold & Wrapped like mockup) */}
-      <View className="flex-1 items-center justify-center px-4">
+      {/* Slot 2: Center Branding (Logo + Text centered) */}
+      <View className="flex-1 flex-row items-center justify-center px-4 gap-2.5">
+        <Image
+          source={require('@/assets/icon.png')}
+          style={{ width: 32, height: 32 }}
+          contentFit="contain"
+        />
         <Text
           style={{ color: colors.foreground }}
-          className="text-center text-[18px] font-black leading-[20px] tracking-tight"
+          className="text-center text-[16px] font-black leading-[18px] tracking-tight"
           numberOfLines={2}>
           Divya Jyoti{'\n'}Foundation
         </Text>
@@ -75,7 +81,7 @@ function CustomTabBar() {
 
 export default function TabsNavigator() {
   return (
-    <SafeAreaView edges={['top', 'bottom']} className="flex-1">
+    <Layout className="px-0 pt-0">
       <Tabs
         tabBar={() => <CustomTabBar />}
         screenOptions={{
@@ -88,6 +94,6 @@ export default function TabsNavigator() {
           }}
         />
       </Tabs>
-    </SafeAreaView>
+    </Layout>
   );
 }

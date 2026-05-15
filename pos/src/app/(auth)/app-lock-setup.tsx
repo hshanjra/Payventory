@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Pressable, Animated } from 'react-native';
+import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
-import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { Layout } from '@/components/ui/layout';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/useTheme';
@@ -65,29 +66,33 @@ export default function AppLockSetupScreen() {
 
   if (success) {
     return (
-      <View className="flex-1" style={{ backgroundColor: colors.canvas }}>
+      <Layout className="px-0 pt-0">
         <Stack.Screen options={{ headerShown: false }} />
         <LinearGradient colors={gradientColors} className="absolute inset-0" />
         <View className="flex-1 items-center justify-center gap-5 px-8">
           <Animated.View style={{ transform: [{ scale: cardAnim }] }}>
             <View
-              className="h-24 w-24 items-center justify-center rounded-[28px]"
+              className="h-24 w-24 items-center justify-center rounded-[28px] overflow-hidden"
               style={{ backgroundColor: colors.primary + '1e' }}>
-              <MaterialIcons name="check-circle" size={48} color={colors.primary} />
+              <Image
+                source={require('@/assets/icon.png')}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="contain"
+              />
             </View>
           </Animated.View>
           <Text
             className="text-center text-[32px] font-extrabold tracking-[-0.5px]"
             style={{ color: colors.foreground }}>
-            You're all set!
+            {"You're all set!"}
           </Text>
           <Text className="text-center text-[16px] leading-6" style={{ color: colors.fgSecondary }}>
-            Device lock is now enabled. You'll be prompted to authenticate when opening the app.
+            {"Device lock is now enabled. You'll be prompted to authenticate when opening the app."}
           </Text>
           <Pressable
             className="w-full overflow-hidden rounded-2xl"
             style={({ pressed }) => (pressed ? { opacity: 0.88 } : {})}
-            onPress={() => router.replace('/(tabs)')}>
+            onPress={() => router.replace('/')}>
             <View
               style={{ backgroundColor: colors.primary }}
               className="h-14 items-center justify-center">
@@ -95,52 +100,51 @@ export default function AppLockSetupScreen() {
             </View>
           </Pressable>
         </View>
-      </View>
+      </Layout>
     );
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: colors.canvas }}>
+    <Layout className="px-0 pt-0">
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient colors={gradientColors} className="absolute inset-0" />
 
-      <SafeAreaView edges={['top', 'bottom']} className="flex-1">
-        <View className="flex-1 items-center justify-center px-6">
-          <Card style={cardAnim_style} className="w-full p-8">
-            <PageHeader
-              title="Secure Your App"
-              subtitle="Enable device authentication (Passcode, PIN, Pattern, or Biometrics) to protect your sales data."
-              icon="security"
-              className="mb-0"
-            />
+      <View className="flex-1 items-center justify-center px-6">
+        <Card style={cardAnim_style} className="w-full p-8">
+          <PageHeader
+            title="Secure Your App"
+            subtitle="Enable device authentication (Passcode, PIN, Pattern, or Biometrics) to protect your sales data."
+            icon="security"
+            className="mb-0"
+          />
 
-            <Pressable
-              className="overflow-hidden rounded-2xl"
-              style={({ pressed }) => (pressed ? { opacity: 0.88 } : {})}
-              onPress={handleEnableLocalAuth}>
-              <View
-                style={{ backgroundColor: colors.primary }}
-                className="h-14 items-center justify-center">
-                <Text className="text-[16px] font-bold tracking-[0.3px] text-white">
-                  Enable Device Lock
-                </Text>
-              </View>
-            </Pressable>
-
-            <Pressable onPress={() => router.replace('/(tabs)')} className="self-center py-2">
-              <Text className="text-[14px] font-semibold" style={{ color: colors.fgMuted }}>
-                Skip for now
+          <Pressable
+            className="overflow-hidden rounded-2xl"
+            style={({ pressed }) => (pressed ? { opacity: 0.88 } : {})}
+            onPress={handleEnableLocalAuth}>
+            <View
+              style={{ backgroundColor: colors.primary }}
+              className="h-14 items-center justify-center">
+              <Text className="text-[16px] font-bold tracking-[0.3px] text-white">
+                Enable Device Lock
               </Text>
-            </Pressable>
+            </View>
+          </Pressable>
 
-            {!!error && (
-              <Text className="text-center text-[14px] font-medium" style={{ color: colors.error }}>
-                {error}
-              </Text>
-            )}
-          </Card>
-        </View>
-      </SafeAreaView>
-    </View>
+          <Pressable onPress={() => router.replace('/')} className="self-center py-2">
+            <Text className="text-[14px] font-semibold" style={{ color: colors.fgMuted }}>
+              Skip for now
+            </Text>
+          </Pressable>
+
+          {!!error && (
+            <Text className="text-center text-[14px] font-medium" style={{ color: colors.error }}>
+              {error}
+            </Text>
+          )}
+        </Card>
+      </View>
+    </Layout>
   );
 }
+

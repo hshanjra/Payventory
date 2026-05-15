@@ -12,8 +12,12 @@ import { AuthProvider, useAuthCtx } from '@/contexts/auth';
 import { SettingsProvider, usePosSettings } from '@/contexts/settings';
 
 import '../../global.css';
+import { QueryClient } from '@tanstack/react-query';
 
-import { queryClient } from '@/lib/query-client';
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { gcTime: 1000 * 60 * 60 * 24 } },
+});
+
 const asyncStoragePersister = createAsyncStoragePersister({ storage: AsyncStorage });
 
 const FinanceLightTheme = {
@@ -56,10 +60,7 @@ function App() {
   }
 
   const isFullyAuthenticated =
-    state.status === 'authenticated' &&
-    authState?.hasAppLockSetup &&
-    !authState?.isAppLocked &&
-    hasPosDefaults;
+    state.status === 'authenticated' && authState?.hasAppLockSetup && !authState?.isAppLocked;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -74,11 +75,12 @@ function App() {
           name="store-select"
           options={{
             presentation: 'formSheet',
-            sheetAllowedDetents: [0.75, 1],
+            sheetAllowedDetents: [0.7, 1],
             sheetGrabberVisible: true,
             sheetCornerRadius: 28,
           }}
         />
+
         <Stack.Screen
           name="settings"
           options={{
@@ -115,7 +117,7 @@ function App() {
         <Stack.Screen name="orders/index" options={{ title: 'Orders' }} />
         <Stack.Screen name="orders/[id]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="customers/index" options={{ title: 'Customers' }} />
-        <Stack.Screen name="explore/index" options={{ title: 'Reports' }} />
+        <Stack.Screen name="reports/index" options={{ title: 'Reports' }} />
 
         <Stack.Screen name="search" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="scan" options={{ presentation: 'modal' }} />
