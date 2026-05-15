@@ -1,4 +1,4 @@
-import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -10,8 +10,6 @@ import { View } from 'react-native';
 import { useTheme, light, dark } from '@/theme/useTheme';
 import { AuthProvider, useAuthCtx } from '@/contexts/auth';
 import { SettingsProvider, usePosSettings } from '@/contexts/settings';
-import { useRouter, useSegments } from 'expo-router';
-import { useEffect } from 'react';
 
 import '../../global.css';
 
@@ -42,46 +40,7 @@ function App() {
   const { colors } = useTheme();
   const { state } = useAuthCtx();
   const { isReady: settingsReady, isComplete: hasPosDefaults } = usePosSettings();
-  const segments = useSegments();
-  const router = useRouter();
   const authState = state.status === 'authenticated' ? state : null;
-
-  useEffect(() => {
-    if (state.status === 'loading') return;
-    if (state.status === 'authenticated' && !settingsReady) return;
-
-    const inAuthGroup = segments[0] === '(auth)';
-
-    if (state.status === 'unauthenticated') {
-      if (!inAuthGroup) {
-        router.replace('/(auth)/onboarding');
-      }
-    } else if (state.status === 'authenticated') {
-      const currentLeaf = segments[segments.length - 1];
-      if (!authState?.hasAppLockSetup) {
-        if (currentLeaf !== 'app-lock-setup') {
-          router.replace('/(auth)/app-lock-setup');
-        }
-      } else if (authState.isAppLocked) {
-        if (currentLeaf !== 'app-lock') {
-          router.replace('/(auth)/app-lock');
-        }
-      } else if (!hasPosDefaults) {
-        if (currentLeaf !== 'pos-setup') {
-          router.replace('/(auth)/pos-setup');
-        }
-      } else if (inAuthGroup) {
-        router.replace('/(tabs)');
-      }
-    }
-  }, [
-    state.status,
-    authState?.hasAppLockSetup,
-    authState?.isAppLocked,
-    hasPosDefaults,
-    settingsReady,
-    segments,
-  ]);
 
   if (state.status === 'loading' || (state.status === 'authenticated' && !settingsReady)) {
     return (
@@ -91,46 +50,106 @@ function App() {
           backgroundColor: colors.canvas,
           alignItems: 'center',
           justifyContent: 'center',
-        }}>
-        {/* You could add a logo or spinner here */}
-      </View>
+        }}
+      />
     );
   }
 
+  const isFullyAuthenticated =
+    state.status === 'authenticated' &&
+    authState?.hasAppLockSetup &&
+    !authState?.isAppLocked &&
+    hasPosDefaults;
+
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <View style={{ flex: 1 }}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="draft-order" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="search" options={{ animation: 'fade' }} />
-          <Stack.Screen name="scan" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-      </View>
-    </SafeAreaView>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={!isFullyAuthenticated}>
+        <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
+      </Stack.Protected>
+
+      <Stack.Protected guard={!!isFullyAuthenticated}>
+        <Stack.Screen name="(tabs)" />
+
+        <Stack.Screen
+          name="store-select"
+          options={{
+            presentation: 'formSheet',
+            sheetAllowedDetents: [0.75, 1],
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 28,
+          }}
+        />
+        <Stack.Screen
+          name="settings"
+          options={{
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="menu"
+          options={{
+            presentation: 'transparentModal',
+            animation: 'fade',
+          }}
+        />
+
+        <Stack.Screen
+          name="draft-order"
+          options={{
+            presentation: 'transparentModal',
+            animation: 'slide_from_right',
+            animationDuration: 10,
+          }}
+        />
+
+        <Stack.Screen
+          name="product/[id]/variant-select"
+          options={{
+            presentation: 'formSheet',
+            sheetAllowedDetents: [1],
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 28,
+          }}
+        />
+
+        <Stack.Screen name="orders/index" options={{ title: 'Orders' }} />
+        <Stack.Screen name="orders/[id]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="customers/index" options={{ title: 'Customers' }} />
+        <Stack.Screen name="explore/index" options={{ title: 'Reports' }} />
+
+        <Stack.Screen name="search" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="scan" options={{ presentation: 'modal' }} />
+      </Stack.Protected>
+
+      <Stack.Screen name="+not-found" />
+    </Stack>
+  );
+}
+
+function ThemeConsumerWrapper() {
+  const { isDark } = useTheme();
+  return (
+    <ThemeProvider value={isDark ? FinanceDarkTheme : FinanceLightTheme}>
+      <App />
+    </ThemeProvider>
   );
 }
 
 export default function RootLayout() {
-  const { isDark } = useTheme();
   return (
     <SafeAreaProvider>
       <PersistQueryClientProvider
         client={queryClient}
         persistOptions={{ persister: asyncStoragePersister }}>
-        <ThemeProvider value={isDark ? FinanceDarkTheme : FinanceLightTheme}>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <KeyboardProvider>
-              <AuthProvider>
-                <SettingsProvider>
-                  <App />
-                </SettingsProvider>
-              </AuthProvider>
-            </KeyboardProvider>
-          </GestureHandlerRootView>
-        </ThemeProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <KeyboardProvider>
+            <AuthProvider>
+              <SettingsProvider>
+                <ThemeConsumerWrapper />
+              </SettingsProvider>
+            </AuthProvider>
+          </KeyboardProvider>
+        </GestureHandlerRootView>
       </PersistQueryClientProvider>
     </SafeAreaProvider>
   );

@@ -1,23 +1,21 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, SafeAreaView } from 'react-native';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { useTheme } from '@/theme/useTheme';
-import { useAuthenticated } from '@/contexts/auth';
 import { usePosSettings } from '@/contexts/settings';
-import { useProductCategories } from '@/hooks/api/categories';
-import { useAddVariantToActiveDraftElseCreate } from '@/hooks/api/orders';
 import { useProducts } from '@/hooks/api/products';
-import type { AdminProductListParams } from '@medusajs/types';
+import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { FlashList } from '@shopify/flash-list';
 
 export default function SearchScreen() {
   const router = useRouter();
-  const inputRef = useRef<TextInput>(null);
-  const { colors } = useTheme();
-  const authState = useAuthenticated();
+  const { colors, isDark } = useTheme();
   const { defaults, isComplete: posDefaultsReady } = usePosSettings();
+  
   const [query, setQuery] = useState('');
+  const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -26,214 +24,142 @@ export default function SearchScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  const { data: categoriesData } = useProductCategories(undefined, 100);
-  const categories = categoriesData?.product_categories ?? [];
-
-  const q = query.trim();
-  const productListParams = useMemo((): AdminProductListParams => {
-    const params: AdminProductListParams = {
-      q: q || undefined,
+  const productListParams = useMemo(() => {
+    const params: any = {
+      q: query.trim() || undefined,
       order: '-created_at',
-      limit: 100,
+      fields: '+variants.*,+variants.prices.*,+variants.inventory_items.*',
     };
-    if (defaults?.salesChannelId) {
-      params.sales_channel_id = defaults.salesChannelId;
-    }
-    if (defaults?.departmentTagId) {
-      params.tags = [defaults.departmentTagId];
-    }
+    if (defaults?.salesChannel?.id) params.sales_channel_id = defaults.salesChannel.id;
     return params;
-  }, [q, defaults?.salesChannelId, defaults?.departmentTagId]);
+  }, [query, defaults?.salesChannel?.id]);
 
-  const { data: productsData, isLoading } = useProducts(productListParams, {
+  const { data: productsData, isLoading } = useProducts(productListParams, 50, {
     enabled: posDefaultsReady,
   });
-  const products = productsData?.products ?? [];
+  
+  const products = productsData?.pages.flatMap((p) => p.products ?? []) ?? [];
 
-  const filteredProducts = useMemo(() => {
-    if (!q) return products.slice(0, 20);
-    const lower = q.toLowerCase();
-    return products.filter((product) =>
-      String(product.title ?? '')
-        .toLowerCase()
-        .includes(lower)
-    );
-  }, [products, q]);
-
-  const addToDraft = useAddVariantToActiveDraftElseCreate({
-    onSuccess: ({ draftOrderId }) => {
-      router.push(`/draft-order/${draftOrderId}`);
-    },
-  });
+  const TypedFlashList = FlashList as any;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      {/* ── Search Header ── */}
-      <SafeAreaView style={{ backgroundColor: colors.surface }}>
-        <View
-          style={{ backgroundColor: colors.surface, borderBottomColor: colors.border }}
-          className="border-b px-4 pb-3 pt-3">
-          <View
-            style={{
-              backgroundColor: colors.canvas,
-              borderColor: colors.border,
-              height: 48,
-            }}
-            className="flex-row items-center rounded-2xl border px-3">
-            {/* Back */}
-            <Pressable onPress={() => router.back()} hitSlop={8} className="pr-2">
-              <MaterialIcons name="arrow-back" size={22} color={colors.icon} />
-            </Pressable>
+    <SafeAreaView edges={['top']} className="flex-1" style={{ backgroundColor: colors.canvas }}>
+      <Stack.Screen options={{ headerShown: false }} />
 
-            {/* Divider */}
-            <View style={{ backgroundColor: colors.border }} className="mx-1 h-5 w-px" />
-
-            {/* Input */}
-            <TextInput
-              ref={inputRef}
-              placeholder={
-                defaults?.departmentTagId
-                  ? 'Search products in this department…'
-                  : 'Search products, orders…'
-              }
-              placeholderTextColor={colors.fgMuted}
-              style={{ color: colors.foreground, flex: 1 }}
-              className="ml-2 text-[15px] font-medium"
-              cursorColor={colors.primary}
-              returnKeyType="search"
-              value={query}
-              onChangeText={setQuery}
-            />
-
-            {/* Divider */}
-            <View style={{ backgroundColor: colors.border }} className="mx-1 h-5 w-px" />
-
-            {/* Scan button */}
-            <Pressable onPress={() => router.push('/scan')} hitSlop={8} className="pl-2">
-              <MaterialIcons name="qr-code-scanner" size={22} color={colors.primary} />
-            </Pressable>
-          </View>
-        </View>
-      </SafeAreaView>
-
-      <ScrollView
-        className="flex-1 px-4"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }}>
-        {!posDefaultsReady ? (
-          <Text style={{ color: colors.warning }} className="mt-4 text-[14px] font-medium">
-            Finish POS setup (sales channel, region, store) to search products.
+      {/* Header */}
+      <View className="px-6 pb-6 pt-4">
+        <View className="mb-6 flex-row items-center justify-between">
+          <Pressable 
+            onPress={() => router.back()}
+            className="h-12 w-12 items-center justify-center rounded-2xl"
+            style={{ backgroundColor: colors.surface }}
+          >
+            <MaterialIcons name="arrow-back-ios-new" size={20} color={colors.foreground} />
+          </Pressable>
+          <Text style={{ color: colors.foreground }} className="text-2xl font-black tracking-tight">
+            SEARCH
           </Text>
-        ) : null}
-
-        {posDefaultsReady && defaults?.departmentTagId ? (
-          <View className="mt-4 flex-row items-center gap-2">
-            <MaterialIcons name="label" size={18} color={colors.primary} />
-            <Text style={{ color: colors.fgSecondary }} className="text-[13px] font-medium">
-              Catalog filtered by department tag
-            </Text>
-          </View>
-        ) : null}
-
-        <View className="mt-5 flex-row items-center justify-between">
-          <Text style={{ color: colors.foreground }} className="text-[18px] font-bold">
-            Categories
-          </Text>
+          <View className="h-12 w-12" />
         </View>
 
-        <View className="mt-3 flex-row flex-wrap gap-2">
-          {categories.slice(0, 10).map((item) => (
-            <View
-              key={item.id}
-              style={{ backgroundColor: colors.muted, borderColor: colors.border }}
-              className="flex-row items-center rounded-xl border px-3 py-2">
-              <MaterialIcons
-                name="category"
-                size={16}
-                color={colors.fgMuted}
-                style={{ marginRight: 6 }}
-              />
-              <Text style={{ color: colors.fgSecondary }} className="text-sm font-medium">
-                {item.name}
+        {/* Unified Search Input */}
+        <View 
+          className="h-14 flex-row items-center rounded-2xl border px-4"
+          style={{ 
+            backgroundColor: colors.surface, 
+            borderColor: colors.border,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: isDark ? 0.2 : 0.05,
+            shadowRadius: 10,
+            elevation: 2
+          }}
+        >
+          <MaterialIcons name="search" size={24} color={colors.fgMuted} />
+          <TextInput
+            ref={inputRef}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search items or scan barcode..."
+            placeholderTextColor={colors.fgMuted}
+            style={{ color: colors.foreground }}
+            className="ml-3 flex-1 text-[16px] font-medium"
+            cursorColor={colors.primary}
+          />
+          <Pressable 
+            onPress={() => router.push('/scan')}
+            className="ml-2 h-10 w-10 items-center justify-center rounded-xl"
+            style={{ backgroundColor: colors.primary }}
+          >
+            <MaterialIcons name="qr-code-scanner" size={22} color={colors.primaryFg} />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Results */}
+      {isLoading && products.length === 0 ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      ) : (
+        <TypedFlashList
+          data={products}
+          keyExtractor={(item: any) => item.id}
+          estimatedItemSize={100}
+          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
+          ListEmptyComponent={
+            <View className="mt-20 items-center">
+              <MaterialIcons name="inventory-2" size={64} color={colors.muted} />
+              <Text style={{ color: colors.fgSecondary }} className="mt-4 text-[16px] font-bold text-center">
+                {query ? `No items found matching "${query}"` : 'Browse your store catalog'}
               </Text>
             </View>
-          ))}
-        </View>
-
-        <Text style={{ color: colors.foreground }} className="mt-8 text-[18px] font-bold">
-          Products
-        </Text>
-
-        <View className="mt-4 gap-3">
-          {isLoading ? (
-            <Text style={{ color: colors.fgSecondary }} className="text-[14px]">
-              Loading products...
-            </Text>
-          ) : filteredProducts.length === 0 ? (
-            <Text style={{ color: colors.fgSecondary }} className="text-[14px]">
-              No products found.
-            </Text>
-          ) : (
-            filteredProducts.map((product) => {
-              const variant = product.variants?.[0];
-              const variantId = variant?.id;
-              const price = Number(
-                variant?.calculated_price?.calculated_amount ?? variant?.prices?.[0]?.amount ?? 0
-              );
-              return (
-                <View
-                  key={product.id}
-                  className="flex-row items-center gap-3 rounded-2xl border p-3"
-                  style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-                  {product.thumbnail ? (
-                    <Image source={{ uri: product.thumbnail }} className="h-16 w-16 rounded-xl" />
-                  ) : (
-                    <View
-                      className="h-16 w-16 items-center justify-center rounded-xl"
-                      style={{ backgroundColor: colors.muted }}>
-                      <MaterialIcons name="inventory-2" size={22} color={colors.fgMuted} />
-                    </View>
-                  )}
-                  <View className="flex-1">
-                    <Text
-                      style={{ color: colors.foreground }}
-                      className="text-[14px] font-semibold">
-                      {product.title}
-                    </Text>
-                    <Text
-                      style={{ color: colors.foreground }}
-                      className="mt-1 text-[13px] font-bold">
-                      ₹{(price / 100).toFixed(2)}
-                    </Text>
+          }
+          renderItem={({ item }: { item: any }) => {
+            const variantCount = item.variants?.length ?? 0;
+            const basePrice = Number(item.variants?.[0]?.prices?.[0]?.amount ?? 0) / 100;
+            
+            return (
+              <Pressable
+                onPress={() => router.push(`/product/${item.id}/variant-select`)}
+                className="mb-3 rounded-2xl border p-4"
+                style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+              >
+                <View className="flex-row items-center">
+                  <View 
+                    className="h-16 w-16 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: colors.muted }}
+                  >
+                    {item.thumbnail ? (
+                      <Image source={{ uri: item.thumbnail }} className="h-16 w-16 rounded-xl" />
+                    ) : (
+                      <MaterialIcons name="image" size={24} color={colors.fgMuted} />
+                    )}
                   </View>
-                  <Pressable
-                    disabled={!variantId || addToDraft.isPending}
-                    onPress={() => {
-                      if (!variantId) return;
-                      addToDraft.mutate({
-                        variantId,
-                        email: authState.userEmail || authState.user.email,
-                      });
-                    }}
-                    style={{
-                      backgroundColor: colors.surface,
-                      borderColor: colors.primary,
-                      borderRadius: 10,
-                      borderWidth: 1.5,
-                      paddingHorizontal: 14,
-                      paddingVertical: 8,
-                      opacity: !variantId || addToDraft.isPending ? 0.6 : 1,
-                    }}>
-                    <Text style={{ color: colors.primary }} className="text-xs font-bold">
-                      Add to cart
+                  <View className="ml-4 flex-1">
+                    <Text style={{ color: colors.foreground }} className="text-[16px] font-black" numberOfLines={1}>
+                      {item.title}
                     </Text>
-                  </Pressable>
+                    <Text style={{ color: colors.fgSecondary }} className="text-[12px] font-bold uppercase tracking-wider mt-0.5">
+                      {variantCount} {variantCount === 1 ? 'Variant' : 'Variants'}
+                    </Text>
+                    <View className="mt-2 flex-row items-center justify-between">
+                      <Text style={{ color: colors.primary }} className="text-[15px] font-black">
+                        ₹{basePrice.toFixed(2)}
+                      </Text>
+                      <View className="rounded-lg px-2 py-0.5" style={{ backgroundColor: colors.successBg }}>
+                        <Text style={{ color: colors.success }} className="text-[10px] font-black uppercase">
+                          Available
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
                 </View>
-              );
-            })
-          )}
-        </View>
-      </ScrollView>
-    </View>
+              </Pressable>
+            );
+          }}
+        />
+      )}
+    </SafeAreaView>
   );
 }
