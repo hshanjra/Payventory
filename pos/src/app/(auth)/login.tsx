@@ -41,33 +41,29 @@ export default function LoginScreen() {
   });
   const email = watch('email');
 
-  // Card entrance animation
-  const cardAnim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.spring(cardAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      tension: 55,
-      friction: 8,
-    }).start();
-  }, []);
-
   // Derived border color for focused inputs
   const inputBorderColor = (focused: boolean) => (focused ? colors.primary : colors.border);
 
   const gradientColors: [string, string] = isDark
-    ? ['#181002', colors.canvas] // Warm dark
+    ? ['#1E293B', colors.canvas] // Softer dark
     : ['#FFFBEB', colors.canvas]; // Warm amber-50 light
 
-  const cardAnim_style = {
-    transform: [{ translateY: cardAnim.interpolate({ inputRange: [0, 1], outputRange: [48, 0] }) }],
-    opacity: cardAnim,
+  const handleLoginWithPassword = async () => {
+    const isValid = await trigger('email');
+    if (!isValid) return;
+    router.push(`/(auth)/login-password?email=${encodeURIComponent(email.trim())}`);
+  };
+
+  const handleLoginWithOTP = async () => {
+    const isValid = await trigger('email');
+    if (!isValid) return;
+    router.push(`/(auth)/login-otp?email=${encodeURIComponent(email.trim())}`);
   };
 
   return (
     <KeyboardAvoidingView
       className="flex-1"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Background gradient */}
@@ -75,8 +71,8 @@ export default function LoginScreen() {
 
       <SafeAreaView edges={['top', 'bottom']} className="flex-1">
         <ScrollView
-          contentContainerStyle={{ paddingTop: 16, paddingBottom: 32 }}
-          className="flex-grow px-5"
+          contentContainerStyle={{ flexGrow: 1, paddingTop: 16, paddingBottom: 32 }}
+          className="px-6"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           {/* Back button */}
@@ -84,9 +80,7 @@ export default function LoginScreen() {
             className="mb-6 h-10 w-10 items-center justify-center self-start rounded-xl"
             style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)' }}
             onPress={() => router.back()}>
-            <Text className="text-[18px]" style={{ color: colors.foreground }}>
-              ←
-            </Text>
+            <MaterialIcons name="arrow-back" size={20} color={colors.foreground} />
           </Pressable>
 
           {/* Header */}
@@ -96,19 +90,18 @@ export default function LoginScreen() {
             icon="credit-card"
           />
 
-          {/* Card */}
-          <Card style={cardAnim_style}>
+          <View className="mt-8 gap-8">
             {/* ── Email field ── */}
-            <View className="gap-2">
+            <View className="gap-2.5">
               <Text
-                className="text-[13px] font-semibold uppercase tracking-wider"
+                className="text-[13px] font-bold uppercase tracking-wider"
                 style={{ color: colors.fgMuted }}>
                 Email address
               </Text>
               <TextInput
-                className="h-[52px] rounded-[14px] border-[1.5px] px-4 text-[15px] font-medium"
+                className="h-[56px] rounded-[16px] border-[1.5px] px-4 text-[16px] font-semibold"
                 style={{
-                  backgroundColor: colors.muted,
+                  backgroundColor: colors.surface,
                   borderColor: inputBorderColor(emailFocused),
                   color: colors.foreground,
                 }}
@@ -132,91 +125,58 @@ export default function LoginScreen() {
               )}
             </View>
 
-            {/* ── Login method buttons ── */}
-            <View className="mt-1 gap-3">
-              <Text
-                className="text-[13px] font-semibold uppercase tracking-wider"
-                style={{ color: colors.fgMuted }}>
-                Login method
-              </Text>
-
-              <Pressable
-                className="flex-row items-center justify-between rounded-2xl p-4"
-                style={({ pressed }) => ({
-                  borderWidth: 1.5,
-                  backgroundColor: pressed ? colors.primary + '1a' : colors.muted,
-                  borderColor: colors.border,
-                })}
-                onPress={async () => {
-                  const isValid = await trigger('email');
-                  if (!isValid) return;
-                  router.push(`/(auth)/login-password?email=${encodeURIComponent(email.trim())}`);
+            {/* ── Action Buttons ── */}
+            <View className="gap-4">
+              <View
+                className="h-[56px] rounded-[16px]"
+                style={{
+                  backgroundColor: colors.primary,
+                  shadowColor: colors.primary,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: isDark ? 0.3 : 0.2,
+                  shadowRadius: 8,
+                  elevation: 4,
                 }}>
-                <View className="flex-row items-center gap-3.5">
-                  <View
-                    className="h-11 w-11 items-center justify-center rounded-[14px]"
-                    style={{ backgroundColor: colors.primary + '26' }}>
-                    <MaterialIcons name="vpn-key" size={22} color={colors.primary} />
-                  </View>
-                  <View>
-                    <Text className="text-[15px] font-bold" style={{ color: colors.foreground }}>
-                      Password
-                    </Text>
-                    <Text className="mt-0.5 text-[13px]" style={{ color: colors.fgSecondary }}>
-                      Login with account password
-                    </Text>
-                  </View>
-                </View>
-                <MaterialIcons name="chevron-right" size={22} color={colors.fgMuted} />
-              </Pressable>
+                <Pressable
+                  className="h-full w-full flex-row items-center justify-center rounded-[16px]"
+                  style={({ pressed }) => ({
+                    backgroundColor: pressed ? colors.primaryFg + '15' : 'transparent',
+                  })}
+                  onPress={handleLoginWithPassword}>
+                  <MaterialIcons name="vpn-key" size={20} color={colors.primaryFg} className="mr-2" />
+                  <Text
+                    className="text-[16px] font-black uppercase tracking-widest"
+                    style={{ color: colors.primaryFg }}>
+                    Login with Password
+                  </Text>
+                </Pressable>
+              </View>
 
-              <Pressable
-                className="flex-row items-center justify-between rounded-2xl p-4"
-                style={({ pressed }) => ({
-                  borderWidth: 1.5,
-                  backgroundColor: pressed ? colors.primary + '1a' : colors.muted,
-                  borderColor: colors.border,
-                })}
-                onPress={async () => {
-                  const isValid = await trigger('email');
-                  if (!isValid) return;
-                  router.push(`/(auth)/login-otp?email=${encodeURIComponent(email.trim())}`);
+              <View
+                className="h-[56px] rounded-[16px] border-[1.5px]"
+                style={{
+                  backgroundColor: colors.muted,
+                  borderColor: colors.borderStrong || colors.border,
                 }}>
-                <View className="flex-row items-center gap-3.5">
-                  <View
-                    className="h-11 w-11 items-center justify-center rounded-[14px]"
-                    style={{ backgroundColor: colors.primary + '26' }}>
-                    <MaterialIcons name="smartphone" size={22} color={colors.primary} />
-                  </View>
-                  <View>
-                    <Text className="text-[15px] font-bold" style={{ color: colors.foreground }}>
-                      OTP / Magic Link
-                    </Text>
-                    <Text className="mt-0.5 text-[13px]" style={{ color: colors.fgSecondary }}>
-                      Receive a code on your email
-                    </Text>
-                  </View>
-                </View>
-                <MaterialIcons name="chevron-right" size={22} color={colors.fgMuted} />
-              </Pressable>
+                <Pressable
+                  className="h-full w-full flex-row items-center justify-center rounded-[16px]"
+                  style={({ pressed }) => ({
+                    backgroundColor: pressed ? colors.foreground + '05' : 'transparent',
+                  })}
+                  onPress={handleLoginWithOTP}>
+                  <MaterialIcons name="smartphone" size={20} color={colors.foreground} className="mr-2" />
+                  <Text
+                    className="text-[16px] font-black uppercase tracking-widest"
+                    style={{ color: colors.foreground }}>
+                    Login with OTP
+                  </Text>
+                </Pressable>
+              </View>
             </View>
-          </Card>
+          </View>
 
           {/* Footer */}
-          <View className="mt-8 gap-5 px-5">
-            <Pressable
-              className="h-16 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: colors.primary }}
-              onPress={async () => {
-                const isValid = await trigger('email');
-                if (!isValid) return;
-                router.push(`/(auth)/login-password?email=${encodeURIComponent(email.trim())}`);
-              }}>
-              <Text style={{ color: colors.primaryFg }} className="text-[16px] font-black uppercase tracking-widest">
-                Continue to Password
-              </Text>
-            </Pressable>
-            
+          <View className="mt-auto pt-10">
             <Text className="text-center text-[13px] leading-5" style={{ color: colors.fgMuted }}>
               By signing in you agree to our <Text style={{ color: colors.primary }}>Terms</Text> and{' '}
               <Text style={{ color: colors.primary }}>Privacy Policy</Text>
