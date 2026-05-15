@@ -43,7 +43,6 @@ module.exports = {
         'warning-bg':   light.warningBg,
         error:          light.error,
         'error-bg':     light.errorBg,
-        accent:         light.accent,
 
         // ── Dark variants (suffix -d) ──────────────────────────────────
         'canvas-d':         dark.canvas,
@@ -65,7 +64,6 @@ module.exports = {
         'warning-bg-d':     dark.warningBg,
         'error-d':          dark.error,
         'error-bg-d':       dark.errorBg,
-        'accent-d':         dark.accent,
       },
       fontFamily: {
         inter: ['Inter'],

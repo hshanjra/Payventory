@@ -18,14 +18,6 @@ export interface ThemeColors {
   warningBg:    string;
   error:        string;
   errorBg:      string;
-  accent:       string;
-  tabBarBg:     string;
-  tabBorder:    string;
-  activeTint:   string;
-  inactiveTint: string;
-  cartBg:       string;
-  cartBorder:   string;
-  shadow:       string;
 }
 
 export declare const light: ThemeColors;
