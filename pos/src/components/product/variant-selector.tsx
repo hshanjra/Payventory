@@ -154,7 +154,6 @@ export function VariantSelector({
 
   /**
    * Check if a specific option value is out of stock across ALL variants that have it.
-   * This is a heuristic - ideally we'd check if the SPECIFIC combination is OOS.
    */
   const isOptionValueOutOfStock = (optionId: string, value: string) => {
     const matchingVariants = variants.filter((v) => {
@@ -222,18 +221,6 @@ export function VariantSelector({
                         }}>
                         {val}
                       </Text>
-                      {outOfStock && (
-                        <Text
-                          style={{
-                            fontSize: 9,
-                            fontWeight: '900',
-                            color: colors.mutedFg,
-                            marginTop: 2,
-                            textTransform: 'uppercase',
-                          }}>
-                          OOS
-                        </Text>
-                      )}
                     </Pressable>
                   );
                 })}
