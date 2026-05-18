@@ -19,12 +19,18 @@ import type {
 
 export default function PosSetupScreen() {
   const { colors } = useTheme();
-  const { setDefaults } = usePosSettings();
+  const { setDefaults, defaults } = usePosSettings();
 
-  const [salesChannelId, setSalesChannelId] = useState<string | null>(null);
-  const [regionId, setRegionId] = useState<string | null>(null);
-  const [stockLocationId, setStockLocationId] = useState<string | null>(null);
-  const [departmentTagId, setDepartmentTagId] = useState<string | null>(null);
+  const [salesChannelId, setSalesChannelId] = useState<string | null>(
+    defaults?.salesChannel.id ?? null
+  );
+  const [regionId, setRegionId] = useState<string | null>(defaults?.region.id ?? null);
+  const [stockLocationId, setStockLocationId] = useState<string | null>(
+    defaults?.stockLocation.id ?? null
+  );
+  const [departmentTagId, setDepartmentTagId] = useState<string | null>(
+    defaults?.departmentTag?.id ?? null
+  );
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 

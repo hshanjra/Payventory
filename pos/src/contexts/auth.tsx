@@ -1,12 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo } from 'react';
 
 import Medusa from '@medusajs/js-sdk';
-import * as SecureStore from 'expo-secure-store';
-import { Alert } from 'react-native';
-import { clearPosDefaultsFromStore } from '@/lib/pos-defaults-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { SECURE_STORE_KEYS } from '@/lib/secure-store-keys';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAppStore, User } from '@/store/use-app-store';
 
 export type AuthStateType =
   | {
@@ -18,11 +15,7 @@ export type AuthStateType =
     }
   | {
       status: 'authenticated';
-      user: {
-        id: string;
-        name: string;
-        email: string;
-      };
+      user: User;
       userEmail: string;
       apiKey: string;
       isAppLocked: boolean;
@@ -40,43 +33,31 @@ export type AuthContextType = {
   unlockApp: () => Promise<boolean>;
 };
 
-const BASE_URL = process.env.EXPO_PUBLIC_MEDUSA_URL!;
-
-export const AuthContext = createContext<AuthContextType>({
-  state: { status: 'loading' },
-  login: async () => {
-    throw new Error('login function not implemented');
-  },
-  resentOtp: async () => {
-    throw new Error('resentOtp function not implemented');
-  },
-  validateOtp: async () => {
-    throw new Error('validateOtp function not implemented');
-  },
-  logout: async () => {
-    throw new Error('logout function not implemented');
-  },
-  setupAppLock: async () => {
-    throw new Error('setupAppLock function not implemented');
-  },
-  disableAppLock: async () => {
-    throw new Error('disableAppLock function not implemented');
-  },
-  unlockApp: async () => {
-    throw new Error('unlockApp function not implemented');
-  },
-});
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [state, setState] = useState<AuthStateType>({ status: 'loading' });
-
+  const store = useAppStore();
   const queryClient = useQueryClient();
+
+  const state = useMemo((): AuthStateType => {
+    if (store.status === 'loading') return { status: 'loading' };
+    if (store.status === 'unauthenticated') return { status: 'unauthenticated', userEmail: store.userEmail ?? undefined };
+    return {
+      status: 'authenticated',
+      user: store.user!,
+      userEmail: store.userEmail!,
+      apiKey: store.apiKey!,
+      isAppLocked: store.isAppLocked,
+      hasAppLockSetup: store.hasAppLockSetup,
+    };
+  }, [store.status, store.user, store.userEmail, store.apiKey, store.isAppLocked, store.hasAppLockSetup]);
 
   const login = useCallback(
     async (email: string, strategy: 'emailpass' | 'otp', password: string | number) => {
       try {
+        const medusaUrl = store.medusaUrl || process.env.EXPO_PUBLIC_MEDUSA_URL!;
         const sdk = new Medusa({
-          baseUrl: BASE_URL,
+          baseUrl: medusaUrl,
           debug: false,
           auth: {
             type: 'jwt',
@@ -100,25 +81,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             Authorization: `Bearer ${apiKey}`,
           });
 
-          await SecureStore.setItemAsync(SECURE_STORE_KEYS.MEDUSA_URL, BASE_URL!);
-          await SecureStore.setItemAsync(SECURE_STORE_KEYS.USER_EMAIL, email);
-          await SecureStore.setItemAsync(SECURE_STORE_KEYS.API_KEY, apiKey);
+          const user = {
+            id: userResponse.user.id,
+            name: `${userResponse.user.first_name} ${userResponse.user.last_name}`,
+            email: userResponse.user.email,
+          };
 
-          const appLockMethod = await SecureStore.getItemAsync(SECURE_STORE_KEYS.APP_LOCK_METHOD);
-          const hasAppLockSetup = !!appLockMethod;
+          // Update store - persistence is handled automatically
+          store.login(user, apiKey, email, store.hasAppLockSetup);
+          store.setMedusaUrl(medusaUrl);
 
-          setState({
-            status: 'authenticated',
-            user: {
-              id: userResponse.user.id,
-              name: `${userResponse.user.first_name} ${userResponse.user.last_name}`,
-              email: userResponse.user.email,
-            },
-            userEmail: email,
-            apiKey,
-            hasAppLockSetup,
-            isAppLocked: hasAppLockSetup,
-          });
         } else if (strategy === 'otp') {
           throw new Error('OTP Login not implemented yet');
         }
@@ -127,211 +99,78 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw error;
       }
     },
-    []
+    [store.medusaUrl, store.hasAppLockSetup, store.login, store.setMedusaUrl]
   );
+
   const logout = useCallback(async () => {
-    if (state.status !== 'authenticated') {
+    if (store.status !== 'authenticated' || !store.apiKey) {
       return;
     }
 
     try {
-      const draftOrderId = await SecureStore.getItemAsync(SECURE_STORE_KEYS.DRAFT_ORDER_ID);
-      if (draftOrderId) {
+      if (store.draftOrderId) {
         const sdk = new Medusa({
-          baseUrl: BASE_URL,
+          baseUrl: store.medusaUrl!,
           debug: false,
           auth: {
             type: 'jwt',
             jwtTokenStorageMethod: 'custom',
             storage: {
-              getItem: () => state.apiKey,
+              getItem: () => store.apiKey!,
               setItem: () => {},
               removeItem: () => {},
             },
           },
         });
 
-        const { draft_order } = await sdk.admin.draftOrder.retrieve(draftOrderId);
+        const { draft_order } = await sdk.admin.draftOrder.retrieve(store.draftOrderId);
         if (draft_order.items && draft_order.items.length > 0) {
-          await sdk.admin.draftOrder.delete(draftOrderId);
+          await sdk.admin.draftOrder.delete(store.draftOrderId);
         }
       }
     } catch (error) {
       console.warn('Logout: Could not discard draft order', error);
     }
 
-    await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.API_KEY);
-    await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.APP_PIN);
-    await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.APP_LOCK_METHOD);
-    await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.DRAFT_ORDER_ID);
-    await clearPosDefaultsFromStore();
+    store.logout();
 
     queryClient.clear();
-    setState({ status: 'unauthenticated' });
-  }, [state, queryClient]);
+  }, [store.status, store.apiKey, store.draftOrderId, store.medusaUrl, store.logout, queryClient]);
 
   const setupAppLock = useCallback(async () => {
-    if (state.status !== 'authenticated') return;
-
-    await SecureStore.setItemAsync(SECURE_STORE_KEYS.APP_LOCK_METHOD, 'local');
-
-    setState(
-      (prev) =>
-        ({
-          ...prev,
-          status: 'authenticated',
-          hasAppLockSetup: true,
-          isAppLocked: false,
-        }) as AuthStateType
-    );
-  }, [state.status]);
+    if (store.status !== 'authenticated') return;
+    store.setHasAppLockSetup(true);
+    store.setAppLocked(false);
+  }, [store.status, store.setHasAppLockSetup, store.setAppLocked]);
 
   const disableAppLock = useCallback(async () => {
-    if (state.status !== 'authenticated') return;
-
-    await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.APP_LOCK_METHOD);
-    await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.APP_PIN);
-
-    setState(
-      (prev) =>
-        ({
-          ...prev,
-          status: 'authenticated',
-          hasAppLockSetup: false,
-          isAppLocked: false,
-        }) as AuthStateType
-    );
-  }, [state.status]);
+    if (store.status !== 'authenticated') return;
+    store.setHasAppLockSetup(false);
+    store.setAppLocked(false);
+  }, [store.status, store.setHasAppLockSetup, store.setAppLocked]);
 
   const unlockApp = useCallback(async (): Promise<boolean> => {
-    if (state.status !== 'authenticated') return false;
+    if (store.status !== 'authenticated') return false;
 
-    const method = await SecureStore.getItemAsync(SECURE_STORE_KEYS.APP_LOCK_METHOD);
-
-    if (method === 'local') {
+    if (store.hasAppLockSetup) {
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Unlock Divya Jyoti Foundation',
         fallbackLabel: 'Use Device Passcode',
-        disableDeviceFallback: false, // Ensure we allow PIN/Pattern fallback
+        disableDeviceFallback: false,
       });
       if (result.success) {
-        setState((prev) => ({ ...prev, isAppLocked: false }) as AuthStateType);
+        store.setAppLocked(false);
         return true;
       }
       return false;
     }
 
-    return false;
-  }, [state.status]);
+    return true;
+  }, [store.status, store.hasAppLockSetup, store.setAppLocked]);
 
   const resentOtp = useCallback(async (email: string) => {}, []);
   const validateOtp = useCallback(async (email: string, otp: string | number) => {
-    // Implement actual OTP validation logic with Medusa here
-    // For now, it's a stub that should probably set authenticated state
     throw new Error('OTP Validation not implemented in Medusa yet');
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadAuthState = async () => {
-      try {
-        const medusaUrl = await SecureStore.getItemAsync(SECURE_STORE_KEYS.MEDUSA_URL);
-        const userEmail = await SecureStore.getItemAsync(SECURE_STORE_KEYS.USER_EMAIL);
-        const apiKey = await SecureStore.getItemAsync(SECURE_STORE_KEYS.API_KEY);
-
-        if (cancelled) {
-          return;
-        }
-
-        if (medusaUrl && apiKey) {
-          const sdk = new Medusa({
-            baseUrl: medusaUrl,
-            debug: false,
-            auth: {
-              type: 'jwt',
-              jwtTokenStorageMethod: 'custom',
-              storage: {
-                getItem: () => apiKey,
-                setItem: () => {},
-                removeItem: () => {},
-              },
-            },
-          });
-
-          if (cancelled) {
-            return;
-          }
-
-          const userResponse = await sdk.admin.user.me();
-
-          if (cancelled) {
-            return;
-          }
-
-          const appLockMethod = await SecureStore.getItemAsync(SECURE_STORE_KEYS.APP_LOCK_METHOD);
-          const hasAppLockSetup = !!appLockMethod;
-
-          setState({
-            status: 'authenticated',
-            user: {
-              id: userResponse.user.id,
-              name:
-                [userResponse.user.first_name, userResponse.user.last_name]
-                  .filter(Boolean)
-                  .join(' ') || userResponse.user.email.split('@')[0],
-              email: userResponse.user.email,
-            },
-            userEmail: userResponse.user.email,
-            apiKey,
-            hasAppLockSetup,
-            isAppLocked: hasAppLockSetup,
-          });
-        } else {
-          if (cancelled) {
-            return;
-          }
-
-          await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.API_KEY);
-
-          setState({
-            status: 'unauthenticated',
-            userEmail: userEmail ?? undefined,
-          });
-        }
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
-
-        await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.API_KEY);
-
-        // if (isUnauthorizedError(error)) {
-        //   Toast.show({
-        //     type: 'error',
-        //     text1: 'Session Expired',
-        //     text2: 'Your session has expired. Please log in again.',
-        //     visibilityTime: 4000,
-        //   });
-        // } else {
-        //   console.error('Failed to load auth state:', error);
-        //   Toast.show({
-        //     type: 'error',
-        //     text1: 'Authentication Error',
-        //     text2: 'Failed to load authentication state. Please try again.',
-        //     visibilityTime: 4000,
-        //   });
-        // }
-
-        setState({ status: 'unauthenticated' });
-      }
-    };
-
-    loadAuthState();
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   return (
@@ -370,27 +209,27 @@ export const useAuthenticated = () => {
 };
 
 export const useMedusaSdk = (): Medusa => {
-  const { state } = useAuthCtx();
+  const store = useAppStore();
 
-  if (state.status !== 'authenticated') {
+  if (store.status !== 'authenticated' || !store.apiKey) {
     throw new Error('User is not authenticated');
   }
 
   return useMemo(
     () =>
       new Medusa({
-        baseUrl: BASE_URL,
+        baseUrl: store.medusaUrl || process.env.EXPO_PUBLIC_MEDUSA_URL!,
         debug: false,
         auth: {
           type: 'jwt',
           jwtTokenStorageMethod: 'custom',
           storage: {
-            getItem: () => state.apiKey,
+            getItem: () => store.apiKey!,
             setItem: () => {},
             removeItem: () => {},
           },
         },
       }),
-    [BASE_URL, state.apiKey]
+    [store.medusaUrl, store.apiKey]
   );
 };

@@ -1,61 +1,112 @@
-import React from 'react';
-import { View, Text, TextInput, Pressable } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/useTheme';
 import { formatCurrency } from '@/lib/utils';
+import { router } from 'expo-router';
 
 interface SummarySectionProps {
-  discount: string;
-  setDiscount: (val: string) => void;
-  onApplyDiscount?: () => void;
   subtotal: number;
   total: number;
+  discountTotal?: number;
   currencyCode: string;
+  promotions?: any[];
+  onRemovePromotion?: (code: string) => void;
+  isLoading?: boolean;
 }
 
 export function SummarySection({
-  discount,
-  setDiscount,
-  onApplyDiscount,
   subtotal,
   total,
+  discountTotal = 0,
   currencyCode,
+  promotions = [],
+  onRemovePromotion,
+  isLoading = false,
 }: SummarySectionProps) {
   const { colors } = useTheme();
 
+  const hasPromotions = promotions.length > 0;
+
   return (
     <View
-      className="rounded-3xl border p-5 gap-5"
+      className="gap-5 rounded-3xl border p-5"
       style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
       
-      {/* Discount Input */}
-      <View className="flex-row items-center gap-2">
-        <View 
-          className="flex-1 h-14 flex-row items-center rounded-2xl px-4 border" 
-          style={{ backgroundColor: colors.canvas, borderColor: colors.border }}>
-          <MaterialIcons name="local-offer" size={20} color={colors.fgMuted} />
-          <TextInput
-            placeholder="Discount (%)"
-            placeholderTextColor={colors.fgMuted}
-            keyboardType="number-pad"
-            value={discount}
-            onChangeText={setDiscount}
-            className="flex-1 ml-3 text-[15px] font-bold"
-            style={{ color: colors.foreground }}
-            maxLength={3}
-          />
-          <Text className="text-[15px] font-black mr-2" style={{ color: colors.fgMuted }}>
-            %
+      {/* Promotion Section */}
+      <View className="gap-3">
+        <View className="flex-row items-center justify-between">
+          <Text
+            className="text-[12px] font-black uppercase tracking-[1px]"
+            style={{ color: colors.fgMuted }}>
+            DISCOUNTS
           </Text>
+          {hasPromotions && (
+            <Pressable onPress={() => router.push('/draft-order/promotions')}>
+              <Text className="text-[12px] font-bold uppercase" style={{ color: colors.primary }}>
+                Edit
+              </Text>
+            </Pressable>
+          )}
         </View>
-        <Pressable
-          onPress={onApplyDiscount}
-          className="h-14 px-6 items-center justify-center rounded-2xl"
-          style={{ backgroundColor: colors.primary }}>
-          <Text className="text-[15px] font-black" style={{ color: colors.primaryFg }}>
-            Apply
-          </Text>
-        </Pressable>
+
+        {hasPromotions ? (
+          /* Applied Promotions List */
+          <View className="gap-2">
+            {promotions.map((promo) => (
+              <View
+                key={promo.id}
+                className="flex-row items-center justify-between rounded-2xl border px-4 py-3"
+                style={{ 
+                  backgroundColor: colors.canvas, 
+                  borderColor: colors.border,
+                  opacity: isLoading ? 0.6 : 1
+                }}>
+                <View className="flex-row items-center gap-3">
+                  <View
+                    className="h-10 w-10 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: colors.primary + '15' }}>
+                    <MaterialIcons name="local-offer" size={20} color={colors.primary} />
+                  </View>
+                  <View>
+                    <Text className="text-[15px] font-bold" style={{ color: colors.foreground }}>
+                      {promo.code}
+                    </Text>
+                    <Text className="text-[13px] font-medium" style={{ color: colors.fgSecondary }}>
+                      {promo.application_method?.value}% Discount
+                    </Text>
+                  </View>
+                </View>
+                <Pressable
+                  onPress={() => onRemovePromotion?.(promo.code)}
+                  disabled={isLoading}
+                  className="h-10 w-10 items-center justify-center rounded-xl"
+                  style={{ backgroundColor: colors.muted }}>
+                  {isLoading ? (
+                    <ActivityIndicator size="small" color={colors.foreground} />
+                  ) : (
+                    <MaterialIcons name="delete-outline" size={22} color={colors.error || '#EF4444'} />
+                  )}
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        ) : (
+          /* Add Discount Button */
+          <Pressable
+            onPress={() => router.push('/draft-order/promotions')}
+            disabled={isLoading}
+            className="flex-row items-center justify-between rounded-2xl border px-5 py-5"
+            style={{ 
+              backgroundColor: colors.canvas, 
+              borderColor: colors.border,
+              opacity: isLoading ? 0.6 : 1 
+            }}>
+            <Text className="text-[16px] font-bold" style={{ color: colors.fgSecondary }}>
+              Add discount
+            </Text>
+            <MaterialIcons name="local-offer" size={24} color={colors.fgMuted} />
+          </Pressable>
+        )}
       </View>
 
       <View style={{ height: 1, backgroundColor: colors.border }} />
@@ -70,6 +121,17 @@ export function SummarySection({
             {formatCurrency(subtotal, currencyCode)}
           </Text>
         </View>
+
+        {discountTotal > 0 && (
+          <View className="flex-row items-center justify-between">
+            <Text className="text-[15px] font-medium" style={{ color: colors.fgSecondary }}>
+              Discount
+            </Text>
+            <Text className="text-[15px] font-bold" style={{ color: colors.error || '#EF4444' }}>
+              -{formatCurrency(discountTotal, currencyCode)}
+            </Text>
+          </View>
+        )}
 
         <View className="flex-row items-center justify-between">
           <Text className="text-[15px] font-medium" style={{ color: colors.fgSecondary }}>
@@ -86,9 +148,7 @@ export function SummarySection({
             style={{ color: colors.foreground }}>
             TOTAL DUE
           </Text>
-          <Text
-            className="text-[24px] font-black tracking-tight"
-            style={{ color: colors.primary }}>
+          <Text className="text-[24px] font-black tracking-tight" style={{ color: colors.primary }}>
             {formatCurrency(total, currencyCode)}
           </Text>
         </View>

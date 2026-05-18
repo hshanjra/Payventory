@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
@@ -11,19 +11,17 @@ import {
   useUpdateDraftOrderCustomer,
   useDeleteDraftOrder,
   DRAFT_ORDER_DEFAULT_CUSTOMER_EMAIL,
-  useAddDraftOrderPromotions,
+  useRemoveDraftOrderPromotions,
 } from '@/hooks/api/draft-orders';
 
 import { OrderItemRow } from '@/components/draft-order/order-item-row';
 import { CustomerSlot } from '@/components/draft-order/customer-slot';
 import { SummarySection } from '@/components/draft-order/summary-section';
 import { EmptyCart } from '@/components/draft-order/empty-cart';
-import { cn } from '@/lib/utils';
 import { Prompt } from '@/components/ui/prompt';
 
 export default function DraftOrderScreen() {
   const { colors, isDark } = useTheme();
-  const [discount, setDiscount] = useState('');
   const [showCancelPrompt, setShowCancelPrompt] = useState(false);
 
   // ── Data ───────────────────────────────────────────────────────────────────
@@ -37,26 +35,26 @@ export default function DraftOrderScreen() {
   } = useUpdateDraftOrderItem();
   const { mutate: updateCustomer, isPending: isUpdatingCustomer } = useUpdateDraftOrderCustomer();
   const { mutate: deleteDraftOrder, isPending: isDeleting } = useDeleteDraftOrder();
-  const { mutate: addPromotion, isPending: isAddingPromotion } = useAddDraftOrderPromotions();
+  const { mutateAsync: removePromotion, isPending: isRemovingPromotion } = useRemoveDraftOrderPromotions();
 
   // ── Derived values ─────────────────────────────────────────────────────────
   const items = (draftOrder?.items ?? []) as any[];
   const currencyCode = String(draftOrder?.currency_code ?? 'INR').toUpperCase();
   const subtotal = Number(draftOrder?.subtotal ?? 0);
   const total = Number(draftOrder?.total ?? 0);
+  const discountTotal = Number(draftOrder?.discount_total ?? 0);
+  const appliedPromotions = (draftOrder as any)?.promotions ?? [];
 
   const customer = draftOrder?.customer;
   const isGuest = !customer || customer.email === DRAFT_ORDER_DEFAULT_CUSTOMER_EMAIL;
 
   // ── Handlers ───────────────────────────────────────────────────────────────
-  const handleApplyDiscount = () => {
-    if (!discount) return;
-
-    // For now, we assume the discount is a percentage.
-    // In a real Medusa setup, you'd apply a promotion code.
-    // We'll just alert for now or try to apply a code if it follows a pattern.
-    // Alert.alert('Apply Discount', `Applying ${discount}% discount to order.`);
-    // addPromotion({ promo_codes: [`PERCENT_${discount}`] });
+  const handleRemovePromotion = async (promoCode: string) => {
+    try {
+      await removePromotion({ promo_codes: [promoCode] });
+    } catch (error) {
+      console.error('Error removing promotion:', error);
+    }
   };
 
   const handleDecrement = (itemId: string, newQty: number) => {
@@ -156,12 +154,13 @@ export default function DraftOrderScreen() {
           ))}
 
           <SummarySection
-            discount={discount}
-            setDiscount={setDiscount}
-            onApplyDiscount={handleApplyDiscount}
             subtotal={subtotal}
             total={total}
+            discountTotal={discountTotal}
             currencyCode={currencyCode}
+            promotions={appliedPromotions}
+            onRemovePromotion={handleRemovePromotion}
+            isLoading={isRemovingPromotion}
           />
         </KeyboardAwareScrollView>
       )}
@@ -225,4 +224,3 @@ export default function DraftOrderScreen() {
     </Layout>
   );
 }
-

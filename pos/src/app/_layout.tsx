@@ -60,7 +60,10 @@ function App() {
   }
 
   const isFullyAuthenticated =
-    state.status === 'authenticated' && authState?.hasAppLockSetup && !authState?.isAppLocked;
+    state.status === 'authenticated' &&
+    authState?.hasAppLockSetup &&
+    !authState?.isAppLocked &&
+    hasPosDefaults;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

@@ -33,7 +33,7 @@ export default function AuthLayout() {
         />
       </Stack.Protected>
 
-      <Stack.Protected guard={state.status === 'authenticated' && !!authState?.hasAppLockSetup && !authState?.isAppLocked && !hasPosDefaults}>
+      <Stack.Protected guard={state.status === 'authenticated' && !authState?.isAppLocked && !hasPosDefaults}>
         <Stack.Screen name="pos-setup" options={{ animation: 'slide_from_right' }} />
       </Stack.Protected>
     </Stack>

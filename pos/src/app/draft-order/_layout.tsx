@@ -26,7 +26,7 @@ export default function DraftOrderLayout() {
         name="promotions"
         options={{
           presentation: 'formSheet',
-          sheetAllowedDetents: [0.4, 0.7],
+          sheetAllowedDetents: [0.7, 1],
           sheetGrabberVisible: true,
           sheetCornerRadius: 28,
         }}

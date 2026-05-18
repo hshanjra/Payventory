@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/useTheme';
 import { formatCurrency } from '@/lib/utils';
-import { useMedusaSdk } from '@/contexts/auth';
 import { router } from 'expo-router';
 
 export interface OrderItem {
@@ -50,10 +49,8 @@ export function OrderItemRow({
   // Determine if THIS item is being incremented or decremented
   const isTargetedUpdate = isUpdatingItem && updateVariables?.id === item.id;
 
-  const isIncrementing =
-    (isTargetedUpdate && (updateVariables?.update.quantity ?? 0) > qty);
-  const isDecrementing =
-    (isTargetedUpdate && (updateVariables?.update.quantity ?? 0) < qty);
+  const isIncrementing = isTargetedUpdate && (updateVariables?.update.quantity ?? 0) > qty;
+  const isDecrementing = isTargetedUpdate && (updateVariables?.update.quantity ?? 0) < qty;
 
   const handleIncrementPress = async () => {
     const productId = item.variant?.product_id;
@@ -113,7 +110,7 @@ export function OrderItemRow({
               style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.fgMuted }}
             />
             <Text style={{ color: colors.primary }} className="text-[14px] font-black">
-              {formatCurrency(Number(item.total ?? 0), currencyCode)}
+              {formatCurrency(Number((item.unit_price ?? 0) * (item.quantity ?? 0)), currencyCode)}
             </Text>
           </View>
         </View>

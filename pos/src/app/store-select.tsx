@@ -6,18 +6,15 @@ import { useTheme } from '@/theme/useTheme';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useDeleteDraftOrder } from '@/hooks/api/draft-orders';
-import * as SecureStore from 'expo-secure-store';
 import { Prompt } from '@/components/ui/prompt';
-
-import { SECURE_STORE_KEYS } from '@/lib/secure-store-keys';
-
-const DRAFT_ORDER_ID_STORAGE_KEY = SECURE_STORE_KEYS.DRAFT_ORDER_ID;
+import { useAppStore } from '@/store/use-app-store';
 
 export default function StoreSelectScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const { defaults, setDefaults, isComplete: posDefaultsReady } = usePosSettings();
   const { mutateAsync: deleteDraftOrder } = useDeleteDraftOrder();
+  const store = useAppStore();
 
   const [pendingStore, setPendingStore] = useState<any>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -34,15 +31,15 @@ export default function StoreSelectScreen() {
     return data?.pages?.flatMap((page) => page.stock_locations || []) ?? [];
   }, [data?.pages]);
 
-  const performStoreChange = async (store: any) => {
-    const draftOrderId = await SecureStore.getItemAsync(DRAFT_ORDER_ID_STORAGE_KEY);
+  const performStoreChange = async (stockLoc: any) => {
+    const draftOrderId = store.draftOrderId;
     try {
       if (draftOrderId) {
         await deleteDraftOrder();
       }
 
       if (defaults) {
-        const fullStore = storeOptions.find((s) => s.id === store.id);
+        const fullStore = storeOptions.find((s) => s.id === stockLoc.id);
         if (fullStore) {
           await setDefaults({
             ...defaults,
@@ -72,14 +69,14 @@ export default function StoreSelectScreen() {
     }
   };
 
-  const handleStoreSelect = async (store: any) => {
-    const draftOrderId = await SecureStore.getItemAsync(DRAFT_ORDER_ID_STORAGE_KEY);
+  const handleStoreSelect = async (stockLoc: any) => {
+    const draftOrderId = store.draftOrderId;
 
-    if (draftOrderId && store.id !== defaults?.stockLocation?.id) {
-      setPendingStore(store);
+    if (draftOrderId && stockLoc.id !== defaults?.stockLocation?.id) {
+      setPendingStore(stockLoc);
       setShowConfirmDialog(true);
     } else {
-      await performStoreChange(store);
+      await performStoreChange(stockLoc);
     }
   };
 

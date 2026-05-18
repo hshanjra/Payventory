@@ -29,7 +29,7 @@ export const Button: React.FC<ButtonProps> = ({
   const getVariantStyles = () => {
     if (disabled || isPending) {
       return {
-        container: { backgroundColor: colors.muted },
+        container: { backgroundColor: colors.muted, opacity: 0.5 },
         text: { color: colors.fgMuted },
       };
     }

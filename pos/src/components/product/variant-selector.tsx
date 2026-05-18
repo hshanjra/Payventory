@@ -138,18 +138,6 @@ export function VariantSelector({
                     }}>
                     {v.title}
                   </Text>
-                  {outOfStock && (
-                    <Text
-                      style={{
-                        fontSize: 9,
-                        fontWeight: '900',
-                        color: colors.mutedFg,
-                        marginTop: 2,
-                        textTransform: 'uppercase',
-                      }}>
-                      OOS
-                    </Text>
-                  )}
                 </Pressable>
               );
             })}

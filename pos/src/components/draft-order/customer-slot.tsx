@@ -18,7 +18,7 @@ export function CustomerSlot({ customer, isGuest, onRemoveCustomer }: CustomerSl
       <Pressable
         onPress={() => router.push('/draft-order/customer-lookup')}
         className="flex-row items-center justify-between rounded-2xl border-2 p-4"
-        style={{ backgroundColor: colors.surface, borderColor: colors.primary + '20' }}>
+        style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
         <View className="flex-row items-center gap-3">
           <View
             className="h-10 w-10 items-center justify-center rounded-xl"
@@ -42,26 +42,36 @@ export function CustomerSlot({ customer, isGuest, onRemoveCustomer }: CustomerSl
     <View
       className="flex-row items-center justify-between rounded-2xl border-2 p-4"
       style={{ backgroundColor: colors.primary + '05', borderColor: colors.primary + '30' }}>
-      <View className="flex-row items-center gap-3 flex-1">
+      <View className="flex-1 flex-row items-center gap-3">
         <View
           className="h-10 w-10 items-center justify-center rounded-xl"
           style={{ backgroundColor: colors.primary }}>
           <MaterialIcons name="person" size={22} color={colors.primaryFg} />
         </View>
         <View className="flex-1">
-          <Text className="text-[16px] font-black" style={{ color: colors.foreground }} numberOfLines={1}>
-            {customer?.first_name ? `${customer.first_name} ${customer.last_name ?? ''}` : 'Customer'}
+          <Text
+            className="text-[16px] font-black"
+            style={{ color: colors.foreground }}
+            numberOfLines={1}>
+            {customer?.first_name
+              ? `${customer.first_name} ${customer.last_name ?? ''}`
+              : 'Customer'}
           </Text>
-          <Text className="text-[13px] font-medium" style={{ color: colors.fgSecondary }} numberOfLines={1}>
+          <Text
+            className="text-[13px] font-medium"
+            style={{ color: colors.fgSecondary }}
+            numberOfLines={1}>
             {customer?.email}
           </Text>
         </View>
       </View>
-      <Pressable 
+      <Pressable
         onPress={onRemoveCustomer}
-        className="h-10 flex-row items-center px-4 rounded-xl"
+        className="h-10 flex-row items-center rounded-xl px-4"
         style={{ backgroundColor: colors.primary + '10' }}>
-        <Text style={{ color: colors.primary }} className="text-[13px] font-black uppercase tracking-wider mr-1">
+        <Text
+          style={{ color: colors.primary }}
+          className="mr-1 text-[13px] font-black uppercase tracking-wider">
           Change
         </Text>
         <MaterialIcons name="edit" size={16} color={colors.primary} />

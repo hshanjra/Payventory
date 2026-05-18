@@ -1,35 +1,26 @@
-import * as SecureStore from 'expo-secure-store';
 import {
   AdminAddDraftOrderItems,
   AdminAddDraftOrderPromotions,
-  AdminCustomer,
-  AdminDraftOrderListParams,
   AdminDraftOrderParams,
   AdminDraftOrderPreviewResponse,
-  AdminDraftOrderResponse,
   AdminOrderResponse,
   AdminRemoveDraftOrderPromotions,
-  AdminUpdateDraftOrder,
   AdminUpdateDraftOrderItem,
 } from '@medusajs/types';
 import {
   MutationOptions,
-  QueryKey,
   useMutation,
   UseMutationOptions,
   useQuery,
   useQueryClient,
-  UseQueryOptions,
 } from '@tanstack/react-query';
 import { useMedusaSdk } from '@/contexts/auth';
 import { FetchError } from '@medusajs/js-sdk';
 import { useCallback } from 'react';
 import { usePosSettings } from '@/contexts/settings';
-
-import { SECURE_STORE_KEYS } from '@/lib/secure-store-keys';
+import { useAppStore } from '@/store/use-app-store';
 
 const DRAFT_ORDER_QUERY_KEY = 'draft_order';
-const DRAFT_ORDER_ID_STORAGE_KEY = SECURE_STORE_KEYS.DRAFT_ORDER_ID;
 export const DRAFT_ORDER_DEFAULT_CUSTOMER_EMAIL = 'noreply+pos-guest@djf.in';
 
 // ─── Concurrency Management ──────────────────────────────────────────────────
@@ -91,10 +82,11 @@ const useGetOrSetDefaultCustomer = () => {
 const useGetOrSetDraftOrderId = () => {
   const sdk = useMedusaSdk();
   const settings = usePosSettings();
+  const store = useAppStore();
   const getOrSetDefaultCustomer = useGetOrSetDefaultCustomer();
 
   return useCallback(async () => {
-    const draftOrderId = await SecureStore.getItemAsync(DRAFT_ORDER_ID_STORAGE_KEY);
+    const draftOrderId = store.draftOrderId;
 
     if (draftOrderId) {
       return draftOrderId;
@@ -116,7 +108,7 @@ const useGetOrSetDraftOrderId = () => {
       customer_id: defaultCustomerId,
     });
 
-    await SecureStore.setItemAsync(DRAFT_ORDER_ID_STORAGE_KEY, newDraftOrder.draft_order.id);
+    store.setDraftOrderId(newDraftOrder.draft_order.id);
 
     return newDraftOrder.draft_order.id;
   }, [
@@ -124,6 +116,7 @@ const useGetOrSetDraftOrderId = () => {
     sdk,
     settings.defaults?.region?.id,
     settings.defaults?.salesChannel?.id,
+    store,
   ]);
 };
 
@@ -131,11 +124,12 @@ const useGetOrSetDraftOrderId = () => {
 
 export const useCurrentDraftOrder = () => {
   const sdk = useMedusaSdk();
+  const store = useAppStore();
 
   return useQuery({
     queryKey: [DRAFT_ORDER_QUERY_KEY],
     queryFn: async () => {
-      const draftOrderId = await SecureStore.getItemAsync(DRAFT_ORDER_ID_STORAGE_KEY);
+      const draftOrderId = store.draftOrderId;
 
       if (!draftOrderId) {
         return null;
@@ -143,7 +137,7 @@ export const useCurrentDraftOrder = () => {
 
       return sdk.admin.draftOrder.retrieve(draftOrderId, {
         fields:
-          '+tax_total,+discount_total,+subtotal,+total,+items.variant.options.*,+items.variant.options.option.*,+items.variant.inventory_quantity,+customer.*',
+          '+tax_total,+discount_total,+subtotal,+total,+items.variant.options.*,+items.variant.options.option.*,+items.variant.inventory_quantity,+customer.*,+promotions.*,+promotions.application_method.*',
       });
     },
   });
@@ -346,11 +340,13 @@ export const useDeleteDraftOrder = (
 ) => {
   const sdk = useMedusaSdk();
   const queryClient = useQueryClient();
+  const store = useAppStore();
+
   return useMutation({
     mutationFn: async () => {
-      const draftOrderId = await SecureStore.getItemAsync(DRAFT_ORDER_ID_STORAGE_KEY);
+      const draftOrderId = store.draftOrderId;
       if (!draftOrderId) throw new Error('Draft order ID not found');
-      await SecureStore.deleteItemAsync(DRAFT_ORDER_ID_STORAGE_KEY);
+      store.setDraftOrderId(null);
       await sdk.admin.draftOrder.delete(draftOrderId);
     },
     onSuccess: (data, variables, onMutateResult, context) => {
@@ -385,6 +381,7 @@ export const useCompleteDraftOrder = (
   const sdk = useMedusaSdk();
   const queryClient = useQueryClient();
   const settings = usePosSettings();
+  const store = useAppStore();
 
   return useMutation({
     mutationKey: [DRAFT_ORDER_QUERY_KEY, id, 'complete'],
@@ -395,7 +392,6 @@ export const useCompleteDraftOrder = (
         fields: '+tax_total,+discount_total,+subtotal,+total,+items.variant.options.*,+customer.*,+customer.addresses.*',
       });
 
-      const stockLocation = settings.defaults?.stockLocation;
       const billingAddress = draft_order.customer?.addresses.find(a => a.is_default_billing) || draft_order.customer?.addresses[0];
 
       return enqueueMutation(async () => {
@@ -414,7 +410,7 @@ export const useCompleteDraftOrder = (
           await sdk.admin.draftOrder.confirmEdit(id);
           await sdk.admin.draftOrder.convertToOrder(id);
           await sdk.client.fetch(`/admin/orders/${id}/complete`, { method: 'POST' });
-          await SecureStore.deleteItemAsync(DRAFT_ORDER_ID_STORAGE_KEY);
+          store.setDraftOrderId(null);
         } catch (error) {
           await sdk.admin.draftOrder.cancelEdit(id).catch(() => {});
           throw error;
