@@ -8,7 +8,7 @@ export default function DraftOrderLayout() {
         name="customer-lookup"
         options={{
           presentation: 'formSheet',
-          sheetAllowedDetents: [0.6, 1],
+          sheetAllowedDetents: [1],
           sheetGrabberVisible: true,
           sheetCornerRadius: 28,
         }}
@@ -27,6 +27,15 @@ export default function DraftOrderLayout() {
         options={{
           presentation: 'formSheet',
           sheetAllowedDetents: [0.7, 1],
+          sheetGrabberVisible: true,
+          sheetCornerRadius: 28,
+        }}
+      />
+      <Stack.Screen
+        name="create-customer"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.8, 1],
           sheetGrabberVisible: true,
           sheetCornerRadius: 28,
         }}

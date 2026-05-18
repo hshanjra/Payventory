@@ -1,25 +1,21 @@
 import { useState } from 'react';
-import { View, Text, Pressable, TextInput, FlatList } from 'react-native';
+import { View, Text, Pressable, TextInput, FlatList, ActivityIndicator } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Layout } from '@/components/ui/layout';
 import { useTheme } from '@/theme/useTheme';
-import { useCreateCustomer, useCustomers } from '@/hooks/api/customers';
+import { useCustomers } from '@/hooks/api/customers';
 import { useUpdateDraftOrderCustomer } from '@/hooks/api/draft-orders';
 
 export default function SelectCustomerScreen() {
   const { colors } = useTheme();
   const [query, setQuery] = useState('');
-  const [newCustomerName, setNewCustomerName] = useState('');
-  const [newCustomerEmail, setNewCustomerEmail] = useState('');
 
-  const { data } = useCustomers({ q: query });
+  const { data, isLoading, isFetching } = useCustomers({ q: query, order: '-created_at' });
 
   const customers = data?.pages?.flatMap((page) => page.customers || []) || [];
 
   const setCustomer = useUpdateDraftOrderCustomer();
-
-  const createCustomer = useCreateCustomer();
 
   return (
     <Layout className="px-0 pt-0">
@@ -36,13 +32,22 @@ export default function SelectCustomerScreen() {
           <Text style={{ color: colors.foreground }} className="text-[18px] font-bold">
             Select Customer
           </Text>
-          <View className="h-10 w-10" />
+          <Pressable
+            onPress={() => router.push('/draft-order/create-customer')}
+            className="h-10 w-10 items-center justify-center rounded-xl"
+            style={{ backgroundColor: colors.surface }}>
+            <MaterialIcons name="person-add" size={20} color={colors.foreground} />
+          </Pressable>
         </View>
 
         <View
           className="flex-row items-center rounded-xl border px-3"
           style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-          <MaterialIcons name="search" size={18} color={colors.fgMuted} />
+          {isFetching ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <MaterialIcons name="search" size={18} color={colors.fgMuted} />
+          )}
           <TextInput
             value={query}
             onChangeText={setQuery}
@@ -50,6 +55,7 @@ export default function SelectCustomerScreen() {
             placeholderTextColor={colors.fgMuted}
             className="h-12 flex-1 px-2 text-[14px]"
             style={{ color: colors.foreground }}
+            autoFocus
           />
         </View>
       </View>
@@ -57,7 +63,21 @@ export default function SelectCustomerScreen() {
       <FlatList
         data={customers}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 180, gap: 8 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, gap: 8 }}
+        ListEmptyComponent={
+          !isLoading ? (
+            <View className="mt-20 items-center px-4">
+              <MaterialIcons name="person-search" size={64} color={colors.muted} />
+              <Text
+                style={{ color: colors.fgSecondary }}
+                className="mt-4 text-center text-[16px] font-bold">
+                {query
+                  ? `No customers found matching "${query}"`
+                  : 'Start searching for a customer'}
+              </Text>
+            </View>
+          ) : null
+        }
         renderItem={({ item }: { item: any }) => {
           const fullName =
             [item?.first_name, item?.last_name].filter(Boolean).join(' ') || 'Unnamed';
@@ -86,54 +106,11 @@ export default function SelectCustomerScreen() {
         }}
       />
 
-      <View
-        className="absolute bottom-0 left-0 right-0 border-t px-4 pb-6 pt-3"
-        style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-        <Text style={{ color: colors.foreground }} className="mb-2 text-[14px] font-semibold">
-          Create New Customer
-        </Text>
-        <TextInput
-          value={newCustomerName}
-          onChangeText={setNewCustomerName}
-          placeholder="Name"
-          placeholderTextColor={colors.fgMuted}
-          className="mb-2 h-11 rounded-xl border px-3"
-          style={{
-            borderColor: colors.border,
-            color: colors.foreground,
-            backgroundColor: colors.canvas,
-          }}
-        />
-        <TextInput
-          value={newCustomerEmail}
-          onChangeText={setNewCustomerEmail}
-          placeholder="Email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          placeholderTextColor={colors.fgMuted}
-          className="mb-3 h-11 rounded-xl border px-3"
-          style={{
-            borderColor: colors.border,
-            color: colors.foreground,
-            backgroundColor: colors.canvas,
-          }}
-        />
-        <Pressable
-          onPress={() =>
-            createCustomer.mutate({
-              email: newCustomerEmail,
-              first_name: newCustomerName,
-              last_name: newCustomerName,
-              phone: '',
-            })
-          }
-          className="h-11 items-center justify-center rounded-xl"
-          style={{ backgroundColor: colors.primary }}>
-          <Text style={{ color: colors.primaryFg }} className="text-[14px] font-bold">
-            Create customer
-          </Text>
-        </Pressable>
-      </View>
+      {isLoading && customers.length === 0 && (
+        <View className="absolute inset-0 items-center justify-center">
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      )}
     </Layout>
   );
 }

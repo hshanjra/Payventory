@@ -1,4 +1,3 @@
-import React, { useState, useMemo } from 'react';
 import {
   View,
   FlatList,
@@ -6,6 +5,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Alert,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -24,6 +24,7 @@ import {
 } from '@/hooks/api/draft-orders';
 import { usePromotions, useCreatePromotion } from '@/hooks/api/promotions';
 import { useMedusaSdk } from '@/contexts/auth';
+import { useCallback, useMemo, useState } from 'react';
 
 const discountSchema = z.object({
   percentage: z.string().refine(
@@ -54,6 +55,7 @@ export default function PromotionsScreen() {
   const appliedPromotions = ((draftOrder as any)?.promotions as AdminPromotion[]) ?? [];
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [loadingCode, setLoadingCode] = useState<string | null>(null);
 
   // Fetch promotions with application_method expanded
   const { data: promotionsQuery, isLoading: isPromotionsLoading } = usePromotions({
@@ -112,8 +114,9 @@ export default function PromotionsScreen() {
       // 5. Apply promotion
       await addPromotion({ promo_codes: [code] });
       router.back();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error applying discount:', error);
+      Alert.alert('Error', error?.message || 'Failed to apply discount. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -122,17 +125,21 @@ export default function PromotionsScreen() {
   const handleRemovePromotion = async (promoCode: string) => {
     try {
       setIsProcessing(true);
+      setLoadingCode(promoCode);
       await removePromotion({ promo_codes: [promoCode] });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error removing promotion:', error);
+      Alert.alert('Error', error?.message || 'Failed to remove promotion.');
     } finally {
       setIsProcessing(false);
+      setLoadingCode(null);
     }
   };
 
   const handleApplyExisting = async (code: string) => {
     try {
       setIsProcessing(true);
+      setLoadingCode(code);
       // Remove ALL existing promotions first to prevent stacking
       if (appliedPromotions.length > 0) {
         const promoCodesToRemove = appliedPromotions.map((p) => p.code).filter(Boolean) as string[];
@@ -143,10 +150,12 @@ export default function PromotionsScreen() {
       }
       await addPromotion({ promo_codes: [code] });
       router.back();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error applying existing promotion:', error);
+      Alert.alert('Error', error?.message || 'Failed to apply promotion.');
     } finally {
       setIsProcessing(false);
+      setLoadingCode(null);
     }
   };
 
@@ -184,140 +193,165 @@ export default function PromotionsScreen() {
     return data;
   }, [appliedPromotions, promotionsData, isPromotionsLoading]);
 
-  // Render list items
-  const renderItem = ({ item }: { item: ListItem }) => {
-    switch (item.type) {
-      case 'applied_header':
-        return (
-          <Text
-            style={{ color: colors.fgSecondary }}
-            className="mb-4 mt-2 text-[12px] font-black uppercase tracking-widest">
-            Applied Promotions
-          </Text>
-        );
+  // Render list items memoized to prevent re-mounting
+  const renderItem = useCallback(
+    ({ item }: { item: ListItem }) => {
+      switch (item.type) {
+        case 'applied_header':
+          return (
+            <Text
+              style={{ color: colors.fgSecondary }}
+              className="mb-4 mt-2 text-[12px] font-black uppercase tracking-widest">
+              Applied Promotions
+            </Text>
+          );
 
-      case 'applied_promo': {
-        const promo = item.promo;
-        return (
-          <View
-            className="mb-3 flex-row items-center justify-between rounded-2xl border p-4"
-            style={{ borderColor: colors.border, backgroundColor: colors.surface }}>
-            <View className="flex-row items-center gap-3">
-              <View
+        case 'applied_promo': {
+          const promo = item.promo;
+          const isThisLoading = loadingCode === promo.code;
+          return (
+            <View
+              className="mb-3 flex-row items-center justify-between rounded-2xl border p-4"
+              style={{ borderColor: colors.border, backgroundColor: colors.surface }}>
+              <View className="flex-row items-center gap-3">
+                <View
+                  className="h-10 w-10 items-center justify-center rounded-xl"
+                  style={{ backgroundColor: colors.primary + '15' }}>
+                  <MaterialIcons name="local-offer" size={20} color={colors.primary} />
+                </View>
+                <View>
+                  <Text style={{ color: colors.foreground }} className="text-[16px] font-bold">
+                    {promo.code}
+                  </Text>
+                  <Text style={{ color: colors.fgSecondary }} className="text-[13px] font-medium">
+                    {(promo.application_method as any)?.raw_value?.value ||
+                      (promo.application_method as any)?.value}
+                    % Discount
+                  </Text>
+                </View>
+              </View>
+              <Pressable
+                onPress={() => handleRemovePromotion(promo.code!)}
+                disabled={isProcessing}
                 className="h-10 w-10 items-center justify-center rounded-xl"
-                style={{ backgroundColor: colors.primary + '15' }}>
-                <MaterialIcons name="local-offer" size={20} color={colors.primary} />
-              </View>
-              <View>
-                <Text style={{ color: colors.foreground }} className="text-[16px] font-bold">
-                  {promo.code}
-                </Text>
-                <Text style={{ color: colors.fgSecondary }} className="text-[13px] font-medium">
-                  {(promo.application_method as any)?.raw_value?.value}% Discount
-                </Text>
-              </View>
+                style={{ backgroundColor: colors.muted }}>
+                {isThisLoading ? (
+                  <ActivityIndicator size="small" color={colors.foreground} />
+                ) : (
+                  <MaterialIcons
+                    name="delete-outline"
+                    size={22}
+                    color={colors.error || '#EF4444'}
+                  />
+                )}
+              </Pressable>
             </View>
+          );
+        }
+
+        case 'available_header':
+          return (
+            <Text
+              style={{ color: colors.fgSecondary }}
+              className="mb-4 mt-6 text-[12px] font-black uppercase tracking-widest">
+              Available Offers
+            </Text>
+          );
+
+        case 'available_promo': {
+          const offer = item.promo;
+          const isApplied = appliedPromotions.some((p) => p.code === offer.code);
+          const isThisLoading = loadingCode === offer.code;
+
+          return (
             <Pressable
-              onPress={() => handleRemovePromotion(promo.code!)}
-              disabled={isProcessing}
-              className="h-10 w-10 items-center justify-center rounded-xl"
-              style={{ backgroundColor: colors.muted }}>
-              {isProcessing ? (
-                <ActivityIndicator size="small" color={colors.foreground} />
-              ) : (
-                <MaterialIcons name="delete-outline" size={22} color={colors.error || '#EF4444'} />
-              )}
-            </Pressable>
-          </View>
-        );
-      }
-
-      case 'available_header':
-        return (
-          <Text
-            style={{ color: colors.fgSecondary }}
-            className="mb-4 mt-6 text-[12px] font-black uppercase tracking-widest">
-            Available Offers
-          </Text>
-        );
-
-      case 'available_promo': {
-        const offer = item.promo;
-        const isApplied = appliedPromotions.some((p) => p.code === offer.code);
-
-        return (
-          <Pressable
-            onPress={() => !isApplied && handleApplyExisting(offer.code!)}
-            disabled={isProcessing || isApplied}
-            className="mb-3 rounded-2xl border p-4"
-            style={{
-              borderColor: isApplied ? colors.primary : colors.border,
-              backgroundColor: colors.surface,
-            }}>
-            <View className="flex-row items-center justify-between">
-              <View className="mr-4 flex-1">
-                <Text style={{ color: colors.foreground }} className="text-[16px] font-black">
-                  {offer.code}
-                </Text>
-                <Text
-                  style={{ color: colors.fgSecondary }}
-                  className="mt-1 text-[13px] font-medium">
-                  {(offer.application_method as any)?.value}%{' '}
-                  {(offer.application_method as any)?.type} discount
-                </Text>
+              onPress={() => !isApplied && handleApplyExisting(offer.code!)}
+              disabled={isProcessing || isApplied}
+              className="mb-3 rounded-2xl border p-4"
+              style={{
+                borderColor: isApplied ? colors.primary : colors.border,
+                backgroundColor: colors.surface,
+                opacity: isProcessing && !isThisLoading ? 0.6 : 1,
+              }}>
+              <View className="flex-row items-center justify-between">
+                <View className="mr-4 flex-1">
+                  <Text style={{ color: colors.foreground }} className="text-[16px] font-black">
+                    {offer.code}
+                  </Text>
+                  <Text
+                    style={{ color: colors.fgSecondary }}
+                    className="mt-1 text-[13px] font-medium">
+                    {(offer.application_method as any)?.value}%{' '}
+                    {(offer.application_method as any)?.type} discount
+                  </Text>
+                </View>
+                {isThisLoading ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : isApplied ? (
+                  <MaterialIcons name="check-circle" size={24} color={colors.primary} />
+                ) : (
+                  <MaterialIcons name="arrow-forward-ios" size={16} color={colors.fgMuted} />
+                )}
               </View>
-              {isApplied ? (
-                <MaterialIcons name="check-circle" size={24} color={colors.primary} />
-              ) : (
-                <MaterialIcons name="arrow-forward-ios" size={16} color={colors.fgMuted} />
-              )}
-            </View>
-          </Pressable>
-        );
+            </Pressable>
+          );
+        }
+
+        case 'loading_state':
+          return <ActivityIndicator color={colors.primary} className="my-4" />;
+
+        case 'empty_state':
+          return (
+            <Text style={{ color: colors.fgMuted }} className="mt-2 text-center italic">
+              No other active promotions available
+            </Text>
+          );
+
+        default:
+          return null;
       }
+    },
+    [
+      colors,
+      loadingCode,
+      isProcessing,
+      appliedPromotions,
+      handleRemovePromotion,
+      handleApplyExisting,
+    ]
+  );
 
-      case 'loading_state':
-        return <ActivityIndicator color={colors.primary} className="my-4" />;
-
-      case 'empty_state':
-        return (
-          <Text style={{ color: colors.fgMuted }} className="mt-2 text-center italic">
-            No other active promotions available
+  const listHeader = useMemo(
+    () => (
+      <>
+        <View className="mb-6 flex-row items-center justify-between">
+          <Text style={{ color: colors.foreground }} className="text-2xl font-black tracking-tight">
+            PROMOTIONS
           </Text>
-        );
+          <Pressable
+            onPress={() => router.back()}
+            className="h-10 w-10 items-center justify-center rounded-full"
+            style={{ backgroundColor: colors.muted }}>
+            <MaterialIcons name="close" size={20} color={colors.foreground} />
+          </Pressable>
+        </View>
 
-      default:
-        return null;
-    }
-  };
-
-  const renderHeader = () => (
-    <>
-      <View className="mb-6 flex-row items-center justify-between">
-        <Text style={{ color: colors.foreground }} className="text-2xl font-black tracking-tight">
-          PROMOTIONS
-        </Text>
-        <Pressable
-          onPress={() => router.back()}
-          className="h-10 w-10 items-center justify-center rounded-full"
-          style={{ backgroundColor: colors.muted }}>
-          <MaterialIcons name="close" size={20} color={colors.foreground} />
-        </Pressable>
-      </View>
-
-      <View className="mb-6 gap-3">
-        <TextField
-          name="percentage"
-          placeholder="Enter discount"
-          keyboardType="number-pad"
-          maxLength={3}
-          inputClassName="text-center text-xl py-5"
-        />
-        <FormButton isPending={isProcessing} textClassName="text-[17px] font-black">
-          Apply Discount
-        </FormButton>
-      </View>
-    </>
+        <View className="mb-6 gap-3">
+          <TextField
+            name="percentage"
+            placeholder="Enter discount"
+            keyboardType="number-pad"
+            maxLength={3}
+            inputClassName="text-center text-xl py-5"
+            autoFocus
+          />
+          <FormButton isPending={isProcessing} textClassName="text-[17px] font-black">
+            Apply Discount
+          </FormButton>
+        </View>
+      </>
+    ),
+    [colors, isProcessing]
   );
 
   return (
@@ -334,6 +368,7 @@ export default function PromotionsScreen() {
           // defaultValues={{ percentage: '' }}
           className="flex-1 px-6 pt-6">
           <FlatList
+            keyboardShouldPersistTaps="handled"
             data={listData}
             keyExtractor={(item, index) =>
               'promo' in item && (item as any).promo?.id
@@ -341,7 +376,7 @@ export default function PromotionsScreen() {
                 : `${item.type}-${index}`
             }
             renderItem={renderItem}
-            ListHeaderComponent={renderHeader}
+            ListHeaderComponent={listHeader}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 20 }}
           />
