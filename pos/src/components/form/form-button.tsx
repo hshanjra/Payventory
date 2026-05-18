@@ -15,7 +15,7 @@ export function FormButton({
   const isDisabled = disabled || isPending || !formState.isValid;
 
   return (
-    <Button {...props} onPress={handleSubmit} disabled={isDisabled}>
+    <Button {...props} onPress={handleSubmit} disabled={isDisabled} isPending={isPending}>
       {children}
     </Button>
   );

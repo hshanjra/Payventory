@@ -6,7 +6,7 @@ import { View } from 'react-native';
 import { z } from 'zod';
 
 interface FormProps<T extends FieldValues, Output> {
-  schema: z.ZodType<Output, T>;
+  schema: z.ZodType<Output, any, T>;
   onSubmit: (
     data: Output,
     form: UseFormReturn<T, unknown, Output>,
