@@ -17,9 +17,34 @@ export default function DraftOrderLayout() {
         name="payment-method"
         options={{
           presentation: 'formSheet',
-          sheetAllowedDetents: [0.4, 0.7],
+          sheetAllowedDetents: [0.6],
           sheetGrabberVisible: true,
           sheetCornerRadius: 28,
+        }}
+      />
+      <Stack.Screen
+        name="upi-qr"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.7],
+          sheetGrabberVisible: true,
+          sheetCornerRadius: 28,
+        }}
+      />
+      <Stack.Screen
+        name="cash-collection"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [1],
+          sheetGrabberVisible: true,
+          sheetCornerRadius: 28,
+        }}
+      />
+      <Stack.Screen
+        name="order-result"
+        options={{
+          gestureEnabled: false,
+          headerShown: false,
         }}
       />
       <Stack.Screen

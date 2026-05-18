@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Layout } from '@/components/ui/layout';
 import { useTheme } from '@/theme/useTheme';
@@ -12,6 +13,9 @@ import {
   useDeleteDraftOrder,
   DRAFT_ORDER_DEFAULT_CUSTOMER_EMAIL,
   useRemoveDraftOrderPromotions,
+  ROUND_OFF_ITEM_TITLE,
+  useRemoveDraftOrderItem,
+  useApplyRoundOff,
 } from '@/hooks/api/draft-orders';
 
 import { OrderItemRow } from '@/components/draft-order/order-item-row';
@@ -33,17 +37,36 @@ export default function DraftOrderScreen() {
     isPending: isUpdatePending,
     variables: updateVariables,
   } = useUpdateDraftOrderItem();
+  const { mutate: removeItem } = useRemoveDraftOrderItem();
   const { mutate: updateCustomer, isPending: isUpdatingCustomer } = useUpdateDraftOrderCustomer();
   const { mutate: deleteDraftOrder, isPending: isDeleting } = useDeleteDraftOrder();
-  const { mutateAsync: removePromotion, isPending: isRemovingPromotion } = useRemoveDraftOrderPromotions();
+  const { mutateAsync: removePromotion, isPending: isRemovingPromotion } =
+    useRemoveDraftOrderPromotions();
+  const { mutateAsync: applyRoundOff, isPending: isApplyingRoundOff } = useApplyRoundOff();
 
   // ── Derived values ─────────────────────────────────────────────────────────
-  const items = (draftOrder?.items ?? []) as any[];
+  const allItems = (draftOrder?.items ?? []) as any[];
+  const items = allItems.filter((item) => item.title !== ROUND_OFF_ITEM_TITLE);
+  const roundOffItem = allItems.find((item) => item.title === ROUND_OFF_ITEM_TITLE);
+
+  const existingRoundOffAmount = roundOffItem
+    ? Number(
+        roundOffItem.total ??
+          Number(roundOffItem.unit_price || 0) * Number(roundOffItem.quantity || 0)
+      )
+    : 0;
+
   const currencyCode = String(draftOrder?.currency_code ?? 'INR').toUpperCase();
-  const subtotal = Number(draftOrder?.subtotal ?? 0);
-  const total = Number(draftOrder?.total ?? 0);
   const discountTotal = Number(draftOrder?.discount_total ?? 0);
   const appliedPromotions = (draftOrder as any)?.promotions ?? [];
+
+  // "Clean" values excluding any current round-off item
+  const cleanSubtotal = Number(draftOrder?.subtotal ?? 0) - existingRoundOffAmount;
+  const rawTotal = Number(draftOrder?.total ?? 0) - existingRoundOffAmount;
+
+  // Intended final values
+  const total = Math.round(rawTotal);
+  const roundOffAmount = total - rawTotal;
 
   const customer = draftOrder?.customer;
   const isGuest = !customer || customer.email === DRAFT_ORDER_DEFAULT_CUSTOMER_EMAIL;
@@ -58,7 +81,11 @@ export default function DraftOrderScreen() {
   };
 
   const handleDecrement = (itemId: string, newQty: number) => {
-    updateItem({ id: itemId, update: { quantity: Math.max(0, newQty) } });
+    if (newQty <= 0) {
+      removeItem({ id: itemId });
+    } else {
+      updateItem({ id: itemId, update: { quantity: newQty } });
+    }
   };
 
   const handleIncrement = (itemId: string, newQty: number) => {
@@ -71,6 +98,15 @@ export default function DraftOrderScreen() {
 
   const handleCancelOrder = () => {
     setShowCancelPrompt(true);
+  };
+
+  const handleCheckout = async () => {
+    try {
+      await applyRoundOff();
+      router.push('/draft-order/payment-method');
+    } catch (error) {
+      console.error('Error applying round off:', error);
+    }
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -154,9 +190,10 @@ export default function DraftOrderScreen() {
           ))}
 
           <SummarySection
-            subtotal={subtotal}
+            subtotal={cleanSubtotal}
             total={total}
             discountTotal={discountTotal}
+            roundOffAmount={roundOffAmount}
             currencyCode={currencyCode}
             promotions={appliedPromotions}
             onRemovePromotion={handleRemovePromotion}
@@ -176,10 +213,12 @@ export default function DraftOrderScreen() {
             shadowRadius: 30,
             elevation: 20,
           }}>
-          <View
-            className="h-full flex-1 rounded-[38px]"
+          <BlurView
+            intensity={80}
+            tint={isDark ? 'dark' : 'light'}
+            className="h-full flex-1 overflow-hidden rounded-[38px]"
             style={{
-              backgroundColor: colors.muted,
+              backgroundColor: colors.muted + 'CC',
             }}>
             <Pressable
               onPress={handleCancelOrder}
@@ -194,7 +233,7 @@ export default function DraftOrderScreen() {
                 <MaterialIcons name="close" size={24} color={colors.foreground} />
               )}
             </Pressable>
-          </View>
+          </BlurView>
 
           <View
             className="h-full flex-[3] rounded-[38px]"
@@ -207,16 +246,22 @@ export default function DraftOrderScreen() {
               elevation: 10,
             }}>
             <Pressable
-              onPress={() => router.push('/draft-order/payment-method')}
+              onPress={handleCheckout}
+              disabled={isApplyingRoundOff}
               className="h-full w-full items-center justify-center rounded-[38px]"
               style={({ pressed }) => ({
                 backgroundColor: pressed ? colors.primaryFg + '15' : 'transparent',
+                opacity: isApplyingRoundOff ? 0.7 : 1,
               })}>
-              <Text
-                className="text-[17px] font-black tracking-widest"
-                style={{ color: colors.primaryFg }}>
-                Checkout
-              </Text>
+              {isApplyingRoundOff ? (
+                <ActivityIndicator size="small" color={colors.primaryFg} />
+              ) : (
+                <Text
+                  className="text-[17px] font-black tracking-widest"
+                  style={{ color: colors.primaryFg }}>
+                  Checkout
+                </Text>
+              )}
             </Pressable>
           </View>
         </View>

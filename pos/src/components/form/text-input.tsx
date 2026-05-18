@@ -2,15 +2,17 @@ import { cn } from '@/lib/utils';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React, { useEffect, useState } from 'react';
 import { useController, useFormContext } from 'react-hook-form';
-import { TextInput, TextInputProps, TouchableOpacity, View } from 'react-native';
+import { TextInput, TextInputProps, TouchableOpacity, View, Text } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { InfoBanner } from '../ui/info-banner';
 import { useTheme } from '@/theme/useTheme';
 
 interface TextFieldProps extends Omit<TextInputProps, 'value' | 'onChangeText'> {
   name: string;
+  label?: string;
   placeholder?: string;
   floatingPlaceholder?: boolean;
+  leftIcon?: React.ReactNode;
   className?: string;
   inputClassName?: string;
   errorClassName?: string;
@@ -21,8 +23,10 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(
   (
     {
       name,
+      label,
       placeholder,
       floatingPlaceholder = false,
+      leftIcon,
       className = '',
       inputClassName = '',
       errorClassName = '',
@@ -74,11 +78,19 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(
     }, [floatingPlaceholderScale, floatingPlaceholderTranslateY, showFloating]);
 
     return (
-      <View className={className}>
+      <View className={cn('gap-1.5', className)}>
+        {label && !floatingPlaceholder && (
+          <Text 
+            style={{ color: colors.fgSecondary }} 
+            className="text-[13px] font-bold ml-1 uppercase tracking-wider"
+          >
+            {label}
+          </Text>
+        )}
         <View className="relative justify-center">
           {floatingPlaceholder && (
             <Animated.Text
-              className={cn('absolute left-3 z-10 text-base')}
+              className={cn('absolute z-10 text-base', leftIcon ? 'left-10' : 'left-3')}
               style={[
                 floatingPlaceholderStyle,
                 { color: error ? colors.error : isFocused ? colors.primary : colors.fgMuted },
@@ -87,12 +99,18 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(
               {placeholder}
             </Animated.Text>
           )}
+          {leftIcon && (
+            <View className="absolute left-3 z-10">
+              {leftIcon}
+            </View>
+          )}
           <TextInput
             ref={ref}
             className={cn(
               'rounded-xl border px-3 py-4 text-base font-medium',
               {
                 'pb-2 pt-6': floatingPlaceholder,
+                'pl-10': !!leftIcon,
                 'pr-10': (error && errorVariation === 'inline') || secureTextEntry,
               },
               inputClassName

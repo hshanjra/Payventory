@@ -3,6 +3,7 @@ import { Platform, Text, View, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme/useTheme';
 import { useCurrentDraftOrder } from '@/hooks/api/draft-orders';
 import { Layout } from '@/components/ui/layout';
@@ -20,10 +21,12 @@ function CustomTabBar() {
     ) ?? 0;
 
   return (
-    <View
-      className="absolute bottom-6 left-8 right-8 h-[72px] flex-row items-center justify-between rounded-[40px] px-3 shadow-2xl"
+    <BlurView
+      intensity={80}
+      tint={isDark ? 'dark' : 'light'}
+      className="absolute bottom-6 left-8 right-8 h-[72px] flex-row items-center justify-between overflow-hidden rounded-[40px] px-3 shadow-2xl"
       style={{
-        backgroundColor: colors.surface,
+        backgroundColor: colors.surface + 'CC',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: isDark ? 0.4 : 0.08,
@@ -75,7 +78,7 @@ function CustomTabBar() {
           )}
         </View>
       </Pressable>
-    </View>
+    </BlurView>
   );
 }
 

@@ -8,6 +8,7 @@ interface SummarySectionProps {
   subtotal: number;
   total: number;
   discountTotal?: number;
+  roundOffAmount?: number;
   currencyCode: string;
   promotions?: any[];
   onRemovePromotion?: (code: string) => void;
@@ -18,6 +19,7 @@ export function SummarySection({
   subtotal,
   total,
   discountTotal = 0,
+  roundOffAmount = 0,
   currencyCode,
   promotions = [],
   onRemovePromotion,
@@ -32,7 +34,7 @@ export function SummarySection({
       className="gap-5 rounded-3xl border p-5"
       style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
       
-      {/* Promotion Section */}
+      {/* Promotion Section ... */}
       <View className="gap-3">
         <View className="flex-row items-center justify-between">
           <Text
@@ -141,6 +143,17 @@ export function SummarySection({
             Included
           </Text>
         </View>
+
+        {Math.abs(roundOffAmount) > 0 && (
+          <View className="flex-row items-center justify-between">
+            <Text className="text-[15px] font-medium" style={{ color: colors.fgSecondary }}>
+              Round off
+            </Text>
+            <Text className="text-[15px] font-bold" style={{ color: colors.foreground }}>
+              {roundOffAmount > 0 ? '+' : ''}{formatCurrency(roundOffAmount, currencyCode)}
+            </Text>
+          </View>
+        )}
 
         <View className="mt-2 flex-row items-center justify-between">
           <Text

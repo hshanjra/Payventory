@@ -7,13 +7,7 @@ import {
   AdminRemoveDraftOrderPromotions,
   AdminUpdateDraftOrderItem,
 } from '@medusajs/types';
-import {
-  MutationOptions,
-  useMutation,
-  UseMutationOptions,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, UseMutationOptions, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMedusaSdk } from '@/contexts/auth';
 import { FetchError } from '@medusajs/js-sdk';
 import { useCallback } from 'react';
@@ -22,6 +16,7 @@ import { useAppStore } from '@/store/use-app-store';
 
 const DRAFT_ORDER_QUERY_KEY = 'draft_order';
 export const DRAFT_ORDER_DEFAULT_CUSTOMER_EMAIL = 'noreply+pos-guest@djf.in';
+export const ROUND_OFF_ITEM_TITLE = 'Round off';
 
 // ─── Concurrency Management ──────────────────────────────────────────────────
 
@@ -50,7 +45,7 @@ async function safeBeginEdit(sdk: any, draftOrderId: string) {
   }
 }
 
-// ─── Internal Hooks ──────────────────────────────────────────────────────────
+// ─── Internal Helpers ────────────────────────────────────────────────────────
 
 const useGetOrSetDefaultCustomer = () => {
   const sdk = useMedusaSdk();
@@ -119,6 +114,62 @@ const useGetOrSetDraftOrderId = () => {
     store,
   ]);
 };
+
+/**
+ * Calculates and applies the round-off adjustment within an ACTIVE edit session.
+ */
+async function applyRoundOffAdjustment(sdk: any, draftOrderId: string) {
+  // 1. Get current state INCLUDING pending changes from the active edit
+  const { draft_order } = await sdk.admin.draftOrder.retrieve(draftOrderId, {
+    fields: '+total,+items.title,+items.unit_price,+items.quantity,+items.total',
+  });
+
+  const items = draft_order.items || [];
+  const roundOffItem = items.find((item: any) => item.title === ROUND_OFF_ITEM_TITLE);
+
+  // Safely calculate the current round-off amount
+  const currentRoundOff = roundOffItem
+    ? Number(roundOffItem.total) ||
+      Number(roundOffItem.unit_price) * Number(roundOffItem.quantity) ||
+      0
+    : 0;
+
+  const totalExcludingRoundOff = Number(draft_order.total || 0) - currentRoundOff;
+  const roundedTotal = Math.round(totalExcludingRoundOff);
+  const neededRoundOff = roundedTotal - totalExcludingRoundOff;
+
+  // If no round off needed and no item exists, we're done
+  if (Math.abs(neededRoundOff) < 0.01 && !roundOffItem) {
+    return;
+  }
+
+  // Apply the correction
+  if (Math.abs(neededRoundOff) < 0.01) {
+    // Remove existing round off item if no longer needed
+    if (roundOffItem) {
+      await sdk.admin.draftOrder.removeItems(draftOrderId, [roundOffItem.id]);
+    }
+  } else {
+    if (roundOffItem) {
+      // Update existing round off item
+      await sdk.admin.draftOrder.updateItem(draftOrderId, roundOffItem.id, {
+        unit_price: neededRoundOff,
+        quantity: 1,
+      });
+    } else {
+      // Add new round off item
+      await sdk.admin.draftOrder.addItems(draftOrderId, {
+        items: [
+          {
+            title: ROUND_OFF_ITEM_TITLE,
+            unit_price: neededRoundOff,
+            quantity: 1,
+          },
+        ],
+      });
+    }
+  }
+}
 
 // ─── Public Hooks ────────────────────────────────────────────────────────────
 
@@ -203,7 +254,7 @@ export const useUpdateDraftOrderItem = (
       return new Promise<AdminDraftOrderPreviewResponse | void>((resolve, reject) => {
         const timeoutId = setTimeout(async () => {
           debounceTimeouts.delete(item.id);
-          
+
           enqueueMutation(async () => {
             const draftOrderId = await getOrSetDraftOrderId();
             await safeBeginEdit(sdk, draftOrderId);
@@ -215,8 +266,8 @@ export const useUpdateDraftOrderItem = (
               throw error;
             }
           })
-          .then((data) => resolve(data))
-          .catch(reject);
+            .then((data) => resolve(data as any))
+            .catch(reject);
         }, 300);
 
         debounceTimeouts.set(item.id, timeoutId);
@@ -230,9 +281,9 @@ export const useUpdateDraftOrderItem = (
   });
 };
 
-export const useAddDraftOrderPromotions = (
+export const useRemoveDraftOrderItem = (
   options?: Omit<
-    MutationOptions<AdminDraftOrderPreviewResponse, FetchError, AdminAddDraftOrderPromotions>,
+    UseMutationOptions<AdminDraftOrderPreviewResponse, Error, { id: string }, unknown>,
     'mutationKey' | 'mutationFn'
   >
 ) => {
@@ -241,6 +292,40 @@ export const useAddDraftOrderPromotions = (
   const getOrSetDraftOrderId = useGetOrSetDraftOrderId();
 
   return useMutation({
+    mutationKey: [DRAFT_ORDER_QUERY_KEY, 'items', 'remove'],
+    mutationFn: async ({ id }) => {
+      return enqueueMutation(async () => {
+        const draftOrderId = await getOrSetDraftOrderId();
+        await safeBeginEdit(sdk, draftOrderId);
+        try {
+          await sdk.admin.draftOrder.removeActionItem(draftOrderId, id);
+          return await sdk.admin.draftOrder.confirmEdit(draftOrderId);
+        } catch (error) {
+          await sdk.admin.draftOrder.cancelEdit(draftOrderId).catch(() => {});
+          throw error;
+        }
+      });
+    },
+    onSuccess: (data, variables, onMutateResult, context) => {
+      queryClient.invalidateQueries({ queryKey: [DRAFT_ORDER_QUERY_KEY], exact: false });
+      options?.onSuccess?.(data, variables, onMutateResult, context);
+    },
+    ...options,
+  });
+};
+
+export const useAddDraftOrderPromotions = (
+  options?: Omit<
+    UseMutationOptions<AdminDraftOrderPreviewResponse, FetchError, AdminAddDraftOrderPromotions>,
+    'mutationKey' | 'mutationFn'
+  >
+) => {
+  const sdk = useMedusaSdk();
+  const queryClient = useQueryClient();
+  const getOrSetDraftOrderId = useGetOrSetDraftOrderId();
+
+  return useMutation({
+    mutationKey: [DRAFT_ORDER_QUERY_KEY, 'promotions', 'add'],
     mutationFn: async (payload) => {
       return enqueueMutation(async () => {
         const draftOrderId = await getOrSetDraftOrderId();
@@ -264,7 +349,12 @@ export const useAddDraftOrderPromotions = (
 
 export const useRemoveDraftOrderPromotions = (
   options?: Omit<
-    UseMutationOptions<AdminDraftOrderPreviewResponse, Error, AdminRemoveDraftOrderPromotions, unknown>,
+    UseMutationOptions<
+      AdminDraftOrderPreviewResponse,
+      Error,
+      AdminRemoveDraftOrderPromotions,
+      unknown
+    >,
     'mutationKey' | 'mutationFn'
   >
 ) => {
@@ -273,6 +363,7 @@ export const useRemoveDraftOrderPromotions = (
   const getOrSetDraftOrderId = useGetOrSetDraftOrderId();
 
   return useMutation({
+    mutationKey: [DRAFT_ORDER_QUERY_KEY, 'promotions', 'remove'],
     mutationFn: async (payload) => {
       return enqueueMutation(async () => {
         const draftOrderId = await getOrSetDraftOrderId();
@@ -294,12 +385,46 @@ export const useRemoveDraftOrderPromotions = (
   });
 };
 
+export const useApplyRoundOff = (
+  options?: Omit<
+    UseMutationOptions<AdminDraftOrderPreviewResponse | void, Error, void, unknown>,
+    'mutationKey' | 'mutationFn'
+  >
+) => {
+  const sdk = useMedusaSdk();
+  const queryClient = useQueryClient();
+  const getOrSetDraftOrderId = useGetOrSetDraftOrderId();
+
+  return useMutation({
+    mutationKey: [DRAFT_ORDER_QUERY_KEY, 'round-off'],
+    mutationFn: async () => {
+      return enqueueMutation(async () => {
+        const draftOrderId = await getOrSetDraftOrderId();
+        await safeBeginEdit(sdk, draftOrderId);
+        try {
+          await applyRoundOffAdjustment(sdk, draftOrderId);
+          return await sdk.admin.draftOrder.confirmEdit(draftOrderId);
+        } catch (error) {
+          await sdk.admin.draftOrder.cancelEdit(draftOrderId).catch(() => {});
+          throw error;
+        }
+      });
+    },
+    onSuccess: (data, variables, onMutateResult, context) => {
+      queryClient.invalidateQueries({ queryKey: [DRAFT_ORDER_QUERY_KEY], exact: false });
+      options?.onSuccess?.(data, variables, onMutateResult, context);
+    },
+    ...options,
+  });
+};
+
 export const useUpdateDraftOrderCustomer = (
   options?: Omit<
     UseMutationOptions<
       AdminDraftOrderPreviewResponse,
       Error,
-      { id: string; email: string; phone?: string; first_name?: string; last_name?: string; } | undefined,
+      | { id: string; email: string; phone?: string; first_name?: string; last_name?: string }
+      | undefined,
       unknown
     >,
     'mutationKey' | 'mutationFn'
@@ -389,23 +514,28 @@ export const useCompleteDraftOrder = (
       if (!id) throw new Error('Draft order ID is required');
 
       const { draft_order } = await sdk.admin.draftOrder.retrieve(id, {
-        fields: '+tax_total,+discount_total,+subtotal,+total,+items.variant.options.*,+customer.*,+customer.addresses.*',
+        fields:
+          '+tax_total,+discount_total,+subtotal,+total,+items.variant.options.*,+customer.*,+customer.addresses.*',
       });
 
-      const billingAddress = draft_order.customer?.addresses.find(a => a.is_default_billing) || draft_order.customer?.addresses[0];
+      const billingAddress =
+        draft_order.customer?.addresses.find((a) => a.is_default_billing) ||
+        draft_order.customer?.addresses[0];
 
       return enqueueMutation(async () => {
         await safeBeginEdit(sdk, id);
         try {
           await sdk.admin.draftOrder.update(id, {
-            billing_address: billingAddress ? {
-              first_name: billingAddress.first_name ?? undefined,
-              last_name: billingAddress.last_name ?? undefined,
-              address_1: billingAddress.address_1 ?? undefined,
-              city: billingAddress.city ?? undefined,
-              country_code: billingAddress.country_code ?? undefined,
-              postal_code: billingAddress.postal_code ?? undefined,
-            } : undefined,
+            billing_address: billingAddress
+              ? {
+                  first_name: billingAddress.first_name ?? undefined,
+                  last_name: billingAddress.last_name ?? undefined,
+                  address_1: billingAddress.address_1 ?? undefined,
+                  city: billingAddress.city ?? undefined,
+                  country_code: billingAddress.country_code ?? undefined,
+                  postal_code: billingAddress.postal_code ?? undefined,
+                }
+              : undefined,
           });
           await sdk.admin.draftOrder.confirmEdit(id);
           await sdk.admin.draftOrder.convertToOrder(id);

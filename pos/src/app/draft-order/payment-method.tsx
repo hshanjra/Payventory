@@ -6,6 +6,8 @@ import { useTheme } from '@/theme/useTheme';
 import { useCurrentDraftOrder, useCompleteDraftOrder } from '@/hooks/api/draft-orders';
 import { formatCurrency } from '@/lib/utils';
 
+type PaymentMethod = 'upi_qr' | 'cash';
+
 export default function PaymentMethodScreen() {
   const { colors } = useTheme();
   const { data: draftOrderData } = useCurrentDraftOrder();
@@ -13,24 +15,31 @@ export default function PaymentMethodScreen() {
   const currencyCode = String(draftOrder?.currency_code ?? 'INR').toUpperCase();
   const total = Number(draftOrder?.total ?? 0);
 
-  const [selectedMethod, setSelectedMethod] = useState<'upi_qr' | 'cash' | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
 
   const completeMutation = useCompleteDraftOrder(draftOrder?.id ?? '', {
-    onSuccess: () => {
-      router.dismissAll();
-      router.replace('/orders');
+    onSuccess: (orderId) => {
+      const idToPass = (orderId as unknown as string) || draftOrder?.id;
+      router.push(`/draft-order/order-result?status=success&orderId=${idToPass}&draftOrderId=${draftOrder?.id}`);
     },
+    onError: () => {
+      router.push('/draft-order/order-result?status=failed');
+    }
   });
 
-  const methods = [
-    { id: 'upi_qr', label: 'UPI QR Payment', icon: 'qr-code-2', desc: 'Generate dynamic QR code' },
+  const methods: { id: PaymentMethod; label: string; icon: keyof typeof MaterialIcons.glyphMap; desc: string }[] = [
+    { id: 'upi_qr', label: 'UPI QR Payment', icon: 'qr-code-scanner', desc: 'Generate dynamic QR code' },
     { id: 'cash', label: 'Cash Payment', icon: 'payments', desc: 'Receive physical currency' },
-    { id: 'card', label: 'Card Payment', icon: 'credit-card', desc: 'External card terminal' },
   ];
 
-  const handleComplete = () => {
+  const handleNext = () => {
     if (!selectedMethod) return;
-    completeMutation.mutate();
+    
+    if (selectedMethod === 'upi_qr') {
+      router.push('/draft-order/upi-qr');
+    } else if (selectedMethod === 'cash') {
+      router.push('/draft-order/cash-collection');
+    }
   };
 
   return (
@@ -60,7 +69,7 @@ export default function PaymentMethodScreen() {
             return (
               <Pressable
                 key={method.id}
-                onPress={() => setSelectedMethod(method.id as any)}
+                onPress={() => setSelectedMethod(method.id)}
                 className="rounded-2xl border p-4"
                 style={{ 
                   borderColor: isSelected ? colors.primary : colors.border, 
@@ -73,7 +82,7 @@ export default function PaymentMethodScreen() {
                     style={{ backgroundColor: isSelected ? colors.primary : colors.muted }}
                   >
                     <MaterialIcons 
-                      name={method.icon as any} 
+                      name={method.icon} 
                       size={24} 
                       color={isSelected ? colors.primaryFg : colors.fgSecondary} 
                     />
@@ -99,21 +108,11 @@ export default function PaymentMethodScreen() {
             );
           })}
         </View>
-
-        {selectedMethod === 'upi_qr' && (
-          <View className="mt-8 items-center rounded-3xl border border-dashed p-6" style={{ borderColor: colors.borderStrong }}>
-            <MaterialIcons name="qr-code-2" size={160} color={colors.foreground} />
-            <Text style={{ color: colors.fgSecondary }} className="mt-4 text-center text-[13px] font-medium">
-              Scan this QR with any UPI app to pay{'\n'}
-              <Text className="font-bold">{formatCurrency(total, currencyCode)}</Text>
-            </Text>
-          </View>
-        )}
       </ScrollView>
 
       <View className="pb-8 pt-4">
         <Pressable
-          onPress={handleComplete}
+          onPress={handleNext}
           disabled={!selectedMethod || completeMutation.isPending}
           className="h-14 items-center justify-center rounded-2xl"
           style={{ 
@@ -128,7 +127,7 @@ export default function PaymentMethodScreen() {
               style={{ color: selectedMethod ? colors.primaryFg : colors.mutedFg }} 
               className="text-[16px] font-bold"
             >
-              {selectedMethod === 'upi_qr' ? 'Verify & Complete' : 'Complete Payment'}
+              Continue
             </Text>
           )}
         </Pressable>
