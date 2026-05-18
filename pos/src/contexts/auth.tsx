@@ -134,20 +134,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    const confirmed = await new Promise((resolve) => {
-      Alert.alert(
-        'Logout',
-        'Are you sure you want to logout? This will clear your session and discard any active draft order.',
-        [
-          { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-          { text: 'Logout', style: 'destructive', onPress: () => resolve(true) },
-        ],
-        { cancelable: true, onDismiss: () => resolve(false) }
-      );
-    });
-
-    if (!confirmed) return;
-
     try {
       const draftOrderId = await SecureStore.getItemAsync(SECURE_STORE_KEYS.DRAFT_ORDER_ID);
       if (draftOrderId) {

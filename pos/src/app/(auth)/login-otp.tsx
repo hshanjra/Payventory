@@ -1,13 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  Animated,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TextInput, Pressable, Animated, Alert, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { LayoutWithKeyboardAvoidingScroll } from '@/components/ui/layout';
@@ -104,9 +96,7 @@ export default function LoginOtpScreen() {
 
       {/* Header */}
       <View className="mb-6 items-center gap-2 py-2">
-        <View
-          className="mb-1 h-16 w-16 items-center justify-center rounded-[20px] overflow-hidden"
-          style={{ backgroundColor: colors.primary + '12' }}>
+        <View className="mb-1 h-16 w-16 items-center justify-center overflow-hidden rounded-[20px]">
           <Image
             source={require('@/assets/icon.png')}
             style={{ width: '100%', height: '100%' }}
@@ -121,7 +111,8 @@ export default function LoginOtpScreen() {
         <Text
           className="text-center text-[15px] leading-[22px]"
           style={{ color: colors.fgSecondary }}>
-          {"We've sent a 6-digit code to"}{'\n'}
+          {"We've sent a 6-digit code to"}
+          {'\n'}
           <Text className="font-semibold" style={{ color: colors.foreground }}>
             {email}
           </Text>
@@ -135,9 +126,7 @@ export default function LoginOtpScreen() {
           {
             backgroundColor: colors.surface,
             borderColor: colors.border,
-            boxShadow: isDark
-              ? '0 16px 48px rgba(0,0,0,0.55)'
-              : '0 8px 40px rgba(15,23,42,0.08)',
+            boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.55)' : '0 8px 40px rgba(15,23,42,0.08)',
           },
           cardAnim_style,
         ]}>
@@ -176,9 +165,7 @@ export default function LoginOtpScreen() {
             </Text>
           </Pressable>
           {!!errors.otp?.message && (
-            <Text
-              className="text-center text-[13px] font-medium"
-              style={{ color: colors.error }}>
+            <Text className="text-center text-[13px] font-medium" style={{ color: colors.error }}>
               {errors.otp.message}
             </Text>
           )}
@@ -197,10 +184,7 @@ export default function LoginOtpScreen() {
               try {
                 await validateOtp(email, otpValue);
               } catch (err: any) {
-                Alert.alert(
-                  'Validation Failed',
-                  err?.message || 'Check your code and try again.'
-                );
+                Alert.alert('Validation Failed', err?.message || 'Check your code and try again.');
               } finally {
                 setLoading(false);
               }
@@ -211,7 +195,9 @@ export default function LoginOtpScreen() {
               {loading ? (
                 <ActivityIndicator color={colors.primaryFg} />
               ) : (
-                <Text style={{ color: colors.primaryFg }} className="text-[16px] font-bold tracking-[0.3px]">
+                <Text
+                  style={{ color: colors.primaryFg }}
+                  className="text-[16px] font-bold tracking-[0.3px]">
                   Sign In
                 </Text>
               )}

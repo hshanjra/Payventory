@@ -43,7 +43,10 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your Camera for scanning products."
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your Camera for scanning products.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {
@@ -53,9 +56,10 @@
       },
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.CAMERA"
+        "android.permission.INTERNET"
       ],
-      "package": "com.hshanjra.dev.pointofsale"
+      "package": "com.hshanjra.dev.pointofsale",
+      "usesCleartextTraffic": true
     }
   }
 }

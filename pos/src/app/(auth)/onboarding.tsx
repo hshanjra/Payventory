@@ -29,9 +29,7 @@ export default function OnboardingScreen() {
   }, []);
 
   return (
-    <Layout
-      className="px-0 pt-0"
-      style={{ backgroundColor: colors.surface }}>
+    <Layout className="px-0 pt-0" style={{ backgroundColor: colors.surface }}>
       <View className="flex-1 justify-center px-8">
         <Animated.View
           style={{
@@ -40,9 +38,7 @@ export default function OnboardingScreen() {
           }}
           className="gap-8">
           {/* Brand Icon */}
-          <View
-            className="h-20 w-20 items-center justify-center rounded-[24px] overflow-hidden"
-            style={{ backgroundColor: colors.primary }}>
+          <View className="h-20 w-20 items-center justify-center overflow-hidden rounded-[24px]">
             <Image
               source={require('@/assets/icon.png')}
               style={{ width: '100%', height: '100%' }}

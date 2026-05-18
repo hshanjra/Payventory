@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-} from 'react-native';
+import { View, Text, TextInput, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
 import { LayoutWithKeyboardAvoidingScroll } from '@/components/ui/layout';
@@ -75,9 +70,7 @@ export default function LoginScreen() {
 
       {/* Header */}
       <View className="mb-6 items-center gap-2 py-2">
-        <View
-          className="mb-1 h-16 w-16 items-center justify-center rounded-[20px] overflow-hidden"
-          style={{ backgroundColor: colors.primary + '12' }}>
+        <View className="mb-1 h-16 w-16 items-center justify-center overflow-hidden rounded-[20px]">
           <Image
             source={require('@/assets/icon.png')}
             style={{ width: '100%', height: '100%' }}
@@ -170,7 +163,12 @@ export default function LoginScreen() {
                 backgroundColor: pressed ? colors.foreground + '05' : 'transparent',
               })}
               onPress={handleLoginWithOTP}>
-              <MaterialIcons name="smartphone" size={20} color={colors.foreground} className="mr-2" />
+              <MaterialIcons
+                name="smartphone"
+                size={20}
+                color={colors.foreground}
+                className="mr-2"
+              />
               <Text
                 className="text-[16px] font-black uppercase tracking-widest"
                 style={{ color: colors.foreground }}>

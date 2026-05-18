@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/useTheme';
 import { useAuthCtx } from '@/contexts/auth';
+import { Prompt } from '@/components/ui/prompt';
 
 export default function AppLockScreen() {
   const { colors, isDark } = useTheme();
@@ -14,6 +15,7 @@ export default function AppLockScreen() {
 
   const [error, setError] = useState('');
   const [authenticating, setAuthenticating] = useState(false);
+  const [showLogoutPrompt, setShowLogoutPrompt] = useState(false);
 
   const handleLocalAuth = async () => {
     if (authenticating) return;
@@ -44,11 +46,22 @@ export default function AppLockScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient colors={gradientColors} className="absolute inset-0" />
 
+      <Prompt
+        visible={showLogoutPrompt}
+        title="Sign Out?"
+        submitText="Sign Out"
+        cancelText="Cancel"
+        description="Are you sure you want to sign out of your account? You will need to log in again to access the POS."
+        onSubmit={() => {
+          setShowLogoutPrompt(false);
+          logout();
+        }}
+        onClose={() => setShowLogoutPrompt(false)}
+      />
+
       <View className="flex-1 items-center justify-center px-6">
         <View className="mb-12 items-center gap-6">
-          <View
-            className="h-24 w-24 items-center justify-center rounded-[32px] overflow-hidden"
-            style={{ backgroundColor: colors.primary + '1e' }}>
+          <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-[32px]">
             <Image
               source={require('@/assets/icon.png')}
               style={{ width: '100%', height: '100%' }}
@@ -83,17 +96,13 @@ export default function AppLockScreen() {
           </Pressable>
 
           {!!error && (
-            <Text
-              className="text-center text-[14px] font-medium"
-              style={{ color: colors.error }}>
+            <Text className="text-center text-[14px] font-medium" style={{ color: colors.error }}>
               {error}
             </Text>
           )}
         </View>
 
-        <Pressable
-          onPress={() => logout()}
-          className="mt-12">
+        <Pressable onPress={() => setShowLogoutPrompt(true)} className="mt-12">
           <Text
             className="text-[14px] font-bold uppercase tracking-widest"
             style={{ color: colors.error }}>
@@ -104,4 +113,3 @@ export default function AppLockScreen() {
     </Layout>
   );
 }
-

@@ -6,8 +6,6 @@ import { useTheme } from '@/theme/useTheme';
 import { formatCurrency } from '@/lib/utils';
 import { useRouter } from 'expo-router';
 
-const MEDUSA_URL = process.env.EXPO_PUBLIC_MEDUSA_URL;
-
 interface ProductCardProps {
   product: any;
 }
@@ -16,15 +14,11 @@ export function ProductCard({ product }: ProductCardProps) {
   const { colors } = useTheme();
   const router = useRouter();
 
-  const price = Number(product.variants?.[0]?.prices?.[0]?.amount ?? 0) / 100;
-  
-  let imageUrl = product.thumbnail;
-  if (imageUrl && !imageUrl.startsWith('http')) {
-    // Only prefix if it's a relative path
-    imageUrl = imageUrl.startsWith('/') 
-      ? `${MEDUSA_URL}${imageUrl}`
-      : `${MEDUSA_URL}/${imageUrl}`;
-  }
+  const price = Number(product.variants?.[0]?.prices?.[0]?.amount ?? 0);
+  const rawImageUrl = product.thumbnail || product.images?.[0]?.url;
+
+  // Ensure the URL is absolute and uses https if it's protocol-relative
+  const imageUrl = rawImageUrl?.startsWith('//') ? `https:${rawImageUrl}` : rawImageUrl;
 
   return (
     <Pressable
@@ -40,14 +34,18 @@ export function ProductCard({ product }: ProductCardProps) {
         {imageUrl ? (
           <Image
             source={{ uri: imageUrl }}
-            className="h-full w-full"
-            contentFit="contain"
+            style={{ width: '100%', height: '100%' }}
+            contentFit="cover"
+            transition={300}
+            cachePolicy="memory-disk"
           />
         ) : (
           <MaterialIcons name="inventory-2" size={48} color={colors.muted} />
         )}
-        
-        <View className="absolute bottom-4 right-4 h-10 w-10 items-center justify-center rounded-2xl" style={{ backgroundColor: colors.primary }}>
+
+        <View
+          className="absolute bottom-4 right-4 h-10 w-10 items-center justify-center rounded-2xl"
+          style={{ backgroundColor: colors.primary }}>
           <MaterialIcons name="add" size={24} color={colors.primaryFg} />
         </View>
       </View>
@@ -56,9 +54,7 @@ export function ProductCard({ product }: ProductCardProps) {
         className="px-2 text-[16px] font-black tracking-tight">
         {product.title}
       </Text>
-      <Text
-        style={{ color: colors.fgSecondary }}
-        className="mt-1 px-2 text-[15px] font-bold">
+      <Text style={{ color: colors.fgSecondary }} className="mt-1 px-2 text-[15px] font-bold">
         {formatCurrency(price)}
       </Text>
     </Pressable>

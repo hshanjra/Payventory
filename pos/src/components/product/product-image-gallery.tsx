@@ -1,10 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { View, Image, ScrollView, Dimensions } from 'react-native';
+import { View, ScrollView, Dimensions } from 'react-native';
+import { Image } from 'expo-image';
 import { useTheme } from '@/theme/useTheme';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const IMAGE_PADDING = 16;
+const IMAGE_PADDING = 20;
 const IMAGE_SIZE = SCREEN_WIDTH - IMAGE_PADDING * 2;
 
 interface ProductImageGalleryProps {
@@ -18,7 +19,15 @@ export function ProductImageGallery({ images = [], height }: ProductImageGallery
   const scrollRef = useRef<ScrollView>(null);
 
   const displayHeight = height ?? IMAGE_SIZE;
-  const validImages = images.filter((img) => !!img.url);
+  const validImages = images
+    .filter((img) => !!img.url)
+    .map((img) => {
+      // Ensure the URL is absolute and uses https if it's protocol-relative
+      return {
+        ...img,
+        url: img.url.startsWith('//') ? `https:${img.url}` : img.url,
+      };
+    });
 
   if (validImages.length === 0) {
     return (
@@ -58,7 +67,8 @@ export function ProductImageGallery({ images = [], height }: ProductImageGallery
                 height: displayHeight,
                 backgroundColor: colors.muted,
               }}
-              resizeMode="cover"
+              contentFit="cover"
+              transition={300}
             />
           ))}
         </ScrollView>
@@ -82,8 +92,7 @@ export function ProductImageGallery({ images = [], height }: ProductImageGallery
                   width: i === activeIndex ? 20 : 6,
                   height: 6,
                   borderRadius: 3,
-                  backgroundColor:
-                    i === activeIndex ? colors.primary : colors.primaryFg + '99',
+                  backgroundColor: i === activeIndex ? colors.primary : colors.primaryFg + '99',
                 }}
               />
             ))}

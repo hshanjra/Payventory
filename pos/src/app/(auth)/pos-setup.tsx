@@ -132,9 +132,7 @@ export default function PosSetupScreen() {
 
       {/* Header */}
       <View className="mb-8 mt-4 items-center gap-3">
-        <View
-          className="h-14 w-14 items-center justify-center rounded-2xl overflow-hidden"
-          style={{ backgroundColor: colors.primary + '12' }}>
+        <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-2xl">
           <Image
             source={require('@/assets/icon.png')}
             style={{ width: '100%', height: '100%' }}

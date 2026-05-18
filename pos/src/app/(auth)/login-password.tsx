@@ -1,13 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  Animated,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TextInput, Pressable, Animated, Alert, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { LayoutWithKeyboardAvoidingScroll } from '@/components/ui/layout';
@@ -88,9 +80,7 @@ export default function LoginPasswordScreen() {
 
       {/* Header */}
       <View className="mb-6 items-center gap-2 py-2">
-        <View
-          className="mb-1 h-16 w-16 items-center justify-center rounded-[20px] overflow-hidden"
-          style={{ backgroundColor: colors.primary + '12' }}>
+        <View className="mb-1 h-16 w-16 items-center justify-center overflow-hidden rounded-[20px]">
           <Image
             source={require('@/assets/icon.png')}
             style={{ width: '100%', height: '100%' }}
@@ -119,9 +109,7 @@ export default function LoginPasswordScreen() {
           {
             backgroundColor: colors.surface,
             borderColor: colors.border,
-            boxShadow: isDark
-              ? '0 16px 48px rgba(0,0,0,0.55)'
-              : '0 8px 40px rgba(15,23,42,0.08)',
+            boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.55)' : '0 8px 40px rgba(15,23,42,0.08)',
           },
           cardAnim_style,
         ]}>
@@ -189,10 +177,7 @@ export default function LoginPasswordScreen() {
               await login(email, 'emailpass', password);
               // router.replace logic is handled by _layout.tsx guard
             } catch (err: any) {
-              Alert.alert(
-                'Login Failed',
-                err?.message || 'Check your credentials and try again.'
-              );
+              Alert.alert('Login Failed', err?.message || 'Check your credentials and try again.');
             } finally {
               setLoading(false);
             }
@@ -203,7 +188,11 @@ export default function LoginPasswordScreen() {
             {loading ? (
               <ActivityIndicator color={colors.primaryFg} />
             ) : (
-              <Text style={{ color: colors.primaryFg }} className="text-[16px] font-bold tracking-[0.3px]">Sign In</Text>
+              <Text
+                style={{ color: colors.primaryFg }}
+                className="text-[16px] font-bold tracking-[0.3px]">
+                Sign In
+              </Text>
             )}
           </View>
         </Pressable>
@@ -211,4 +200,3 @@ export default function LoginPasswordScreen() {
     </LayoutWithKeyboardAvoidingScroll>
   );
 }
-
